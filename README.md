@@ -58,7 +58,8 @@ Simulate the supplied standalone timestep:
 uv run iccd-sim timestep `
   "C:\path\to\res_3005.17_ns.dat" `
   --config configs\cu_continuum_flat_response.json `
-  --atomic-reference data\reference\cu `
+  --atomic-reference data\reference `
+  --element Cu `
   --output outputs\cu_3005ns.npz `
   --preview outputs\cu_3005ns.png `
   --validate-248
@@ -71,7 +72,7 @@ representative-condition selector is used:
 uv run iccd-sim sequence "C:\path\to\Cu_6.h5" `
   --simulation Cu_3_68 `
   --config configs\cu_continuum_flat_response.json `
-  --atomic-reference data\reference\cu `
+  --atomic-reference data\reference `
   --output outputs\cu_sequence.npz `
   --reuse-existing
 ```
@@ -82,6 +83,19 @@ groups are indexed directly, so the other simulations in a large container
 are not scanned. `--reuse-existing` validates a fingerprint of the source
 group, selected frame keys, physics configuration, package version, and atomic
 data before treating the output NPZ as a cache hit.
+
+Audit atomic-data readiness for every simulated or planned element with:
+
+```powershell
+uv run iccd-sim atomic-status --atomic-reference data\reference
+```
+
+The target catalog contains Al, As, B, Be, Bi, C, Ca, Co, Cs, Cu, Fe, Ge,
+Ho, In, Mg, Mo, Na, Nb, Ni, P, Pr, Pt, Rb, Sb, Sc, Se, Si, Sm, Sr, Ta, Te,
+Ti, Tm, V, W, Zn, and Zr. Strict mode is the production default and refuses
+an enabled opacity component when its element-specific inputs are absent.
+`--atomic-mode approximate` is available only for explicitly labeled
+sensitivity and software tests. See [atomic-data.md](docs/atomic-data.md).
 
 The maintained HDF5 reader targets the current 34-column solver export only;
 older HDF5 layouts are rejected explicitly. See
@@ -94,7 +108,7 @@ Run a coupled numerical-resolution sweep for a single HDF5 frame with:
 uv run python scripts\single_frame_resolution_sweep.py "C:\path\to\Cu_6.h5" `
   --simulation Cu_3_68 `
   --time-ns 3006 `
-  --atomic-reference data\reference\cu `
+  --atomic-reference data\reference `
   --output-dir outputs\Cu_3006ns_resolution_sweep
 ```
 
@@ -193,11 +207,36 @@ and report modules. See
 [`docs/training-workflow.md`](docs/training-workflow.md) for the module
 boundaries and artifact layout.
 
+For a physical continuum-radiance cache, select the `continuum` backend. This
+strict example uses Cu until additional complete element bundles are added:
+
+```bash
+python scripts/run_training_pipeline.py \
+  --data-dir /path/to/plasma_sim_data \
+  --elements Cu \
+  --simulations-per-element 3 \
+  --cache-backend continuum \
+  --atomic-reference data/reference \
+  --atomic-mode strict \
+  --frames 16 --start-ns 0 --stop-ns 5000 \
+  --cache-dir work/continuum-cache \
+  --output-dir work/reports \
+  --models regression \
+  --architecture standard \
+  --device cuda
+```
+
+The continuum backend defaults to the balanced `r3` spatial, spectral, and
+LOS settings. It simulates the source frames bracketing a shared physical-time
+grid, linearly interpolates photon radiance onto that grid, refuses temporal
+extrapolation, and fingerprints the atomic inputs and fidelity in every
+product.
+
 ## Repository map
 
 ```text
 configs/                 versioned simulator settings
-data/reference/cu/       Cu I-IV levels and e-neutral momentum-transfer data
+data/reference/          element catalog; Cu currently has a complete bundle
 data/processed/          generated videos/manifests (ignored by git)
 docs/                    physics, HDF5, and validation notes
 legacy/                  original exploratory Python source
@@ -226,7 +265,7 @@ intensifier gate/gain, quantum-efficiency variation, pixelization, saturation,
 or noise. Copper plume spectra can be strongly line dominated, so continuum
 images should not be presented as a complete synthetic ICCD forward model.
 
-See [physics.md](docs/physics.md), [hdf5-schema.md](docs/hdf5-schema.md),
-[data-and-splits.md](docs/data-and-splits.md), and
+See [physics.md](docs/physics.md), [atomic-data.md](docs/atomic-data.md),
+[hdf5-schema.md](docs/hdf5-schema.md), [data-and-splits.md](docs/data-and-splits.md), and
 [conditional-generation.md](docs/conditional-generation.md) before
 interpreting or training on generated images.

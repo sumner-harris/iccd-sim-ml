@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "symbol": "Cu",
+  "level_files": {
+    "0": "CuIEnergyC.txt",
+    "1": "CuIIEnergyC.txt",
+    "2": "CuIIIEnergyC.txt",
+    "3": "CuIVEnergyC.txt"
+  },
+  "ionization_energy_ev_by_charge": {
+    "0": 7.72638,
+    "1": 20.29239,
+    "2": 36.841
+  },
+  "momentum_transfer": {
+    "file": "MT_01_01",
+    "cross_section_unit": "bohr2",
+    "outside": "edge"
+  },
+  "provenance": {
+    "description": "User-supplied Cu I-IV level tables and electron-neutral momentum-transfer data",
+    "nist_asd_doi": "10.18434/T4W30F"
+  }
+}

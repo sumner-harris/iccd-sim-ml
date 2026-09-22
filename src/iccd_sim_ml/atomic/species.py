@@ -1,9 +1,11 @@
-"""Material-specific atomic data bundles."""
+"""Material-specific atomic species definitions."""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 
 from .levels import EnergyLevels, load_energy_levels
 
@@ -11,8 +13,29 @@ from .levels import EnergyLevels, load_energy_levels
 @dataclass(frozen=True)
 class AtomicSpecies:
     symbol: str
-    levels_by_charge: dict[int, EnergyLevels]
-    ionization_energy_ev_by_charge: dict[int, float]
+    levels_by_charge: Mapping[int, EnergyLevels]
+    ionization_energy_ev_by_charge: Mapping[int, float]
+
+    def __post_init__(self) -> None:
+        symbol = self.symbol.strip()
+        if not symbol or not symbol[0].isupper() or (len(symbol) > 1 and not symbol[1:].islower()):
+            raise ValueError("Atomic symbol must use canonical capitalization, such as 'Cu'")
+        levels = {int(charge): value for charge, value in self.levels_by_charge.items()}
+        energies = {
+            int(charge): float(value)
+            for charge, value in self.ionization_energy_ev_by_charge.items()
+        }
+        if any(charge < 0 for charge in levels) or any(charge < 0 for charge in energies):
+            raise ValueError("Atomic charge states must be non-negative")
+        if any(not value > 0.0 for value in energies.values()):
+            raise ValueError("Ionization energies must be positive")
+        object.__setattr__(self, "symbol", symbol)
+        object.__setattr__(self, "levels_by_charge", MappingProxyType(levels))
+        object.__setattr__(
+            self,
+            "ionization_energy_ev_by_charge",
+            MappingProxyType(energies),
+        )
 
     def photoionization_charge_states(self) -> tuple[int, ...]:
         return tuple(

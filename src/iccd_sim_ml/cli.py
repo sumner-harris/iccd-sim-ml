@@ -12,7 +12,12 @@ from typing import Any
 import numpy as np
 
 from iccd_sim_ml import __version__
-from iccd_sim_ml.atomic import ContinuumOpacityModel, load_copper_species
+from iccd_sim_ml.atomic import (
+    AtomicDataCatalog,
+    AtomicDataUnavailableError,
+    AtomicReference,
+    normalize_element_symbol,
+)
 from iccd_sim_ml.atomic.opacity import photoionization_effective_cross_sections_m2
 from iccd_sim_ml.imaging import (
     ImageSimulation,
@@ -29,9 +34,8 @@ from iccd_sim_ml.io import (
 )
 
 
-def _atomic_models(config: ImagingConfig, reference: Path):
-    species = load_copper_species(reference)
-    direct = ContinuumOpacityModel.from_momentum_transfer_file(species, reference / "MT_01_01")
+def _atomic_models(config: ImagingConfig, reference: AtomicReference):
+    direct = reference.build_opacity_model()
     temperature_grid = np.geomspace(
         config.temperature_table_min_K,
         config.temperature_table_max_K,
@@ -41,11 +45,7 @@ def _atomic_models(config: ImagingConfig, reference: Path):
     return direct, lookup
 
 
-def _base_metadata(config: ImagingConfig, reference: Path) -> dict[str, Any]:
-    manifest_path = reference / "manifest.json"
-    atomic_manifest = None
-    if manifest_path.exists():
-        atomic_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+def _base_metadata(config: ImagingConfig, reference: AtomicReference) -> dict[str, Any]:
     return {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "package_version": __version__,
@@ -55,8 +55,8 @@ def _base_metadata(config: ImagingConfig, reference: Path) -> dict[str, Any]:
         "spatial_optics_applied": False,
         "sensor_effects_applied": False,
         "config": config.to_dict(),
-        "atomic_reference": str(reference.resolve()),
-        "atomic_manifest": atomic_manifest,
+        "element": reference.species.symbol,
+        "atomic_data": reference.to_metadata(),
     }
 
 
@@ -163,7 +163,10 @@ def _save_sequence(path: Path, result: SequenceSimulation, metadata: dict[str, A
 
 
 def _sequence_cache_request(
-    simulation, indices: list[int], config: ImagingConfig, reference: Path
+    simulation,
+    indices: list[int],
+    config: ImagingConfig,
+    reference: AtomicReference,
 ) -> dict[str, Any]:
     try:
         source_stat = simulation.source.stat()
@@ -176,10 +179,6 @@ def _sequence_cache_request(
         # metadata handle used by stat() with WinError 33. Group attributes,
         # selected dataset keys, and the path still provide a stable identity.
         source_file_identity = None
-    manifest_path = reference / "manifest.json"
-    atomic_manifest = (
-        json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
-    )
     return {
         "schema": 1,
         "package_version": __version__,
@@ -189,7 +188,7 @@ def _sequence_cache_request(
         "simulation_attrs": simulation.attrs,
         "source_timestep_keys": [simulation.timestep_keys[index] for index in indices],
         "config": config.to_dict(),
-        "atomic_manifest": atomic_manifest,
+        "atomic_data": reference.fingerprint(),
     }
 
 
@@ -295,7 +294,25 @@ def _preview_sequence(path: Path, result: SequenceSimulation) -> None:
 
 def _add_simulation_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path, required=True)
-    parser.add_argument("--atomic-reference", type=Path, required=True)
+    parser.add_argument(
+        "--atomic-reference",
+        type=Path,
+        required=True,
+        help="Atomic catalog root or one element directory containing species.json",
+    )
+    parser.add_argument(
+        "--element",
+        help="Element symbol; inferred from HDF5 group attributes for sequence simulation",
+    )
+    parser.add_argument(
+        "--atomic-mode",
+        choices=("strict", "approximate"),
+        default="strict",
+        help=(
+            "strict requires element-specific atomic inputs; approximate uses the original "
+            "constant-Q neutral model and zero unavailable photoionization"
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--preview",
@@ -325,11 +342,81 @@ def _inspect_h5(args: argparse.Namespace) -> int:
     return 0
 
 
+def _atomic_status(args: argparse.Namespace) -> int:
+    catalog = AtomicDataCatalog(args.atomic_reference)
+    elements = args.elements or catalog.target_elements
+    if not elements:
+        raise ValueError("No elements were supplied and the atomic catalog has no target list")
+    rows = []
+    for element in elements:
+        symbol = normalize_element_symbol(element)
+        approximate = catalog.load(symbol, mode="approximate")
+        strict_error = None
+        try:
+            catalog.load(symbol, mode="strict")
+        except (AtomicDataUnavailableError, FileNotFoundError, ValueError) as exc:
+            strict_error = str(exc)
+        rows.append(
+            {
+                **approximate.status.to_dict(),
+                "strict_ready": strict_error is None,
+                "strict_error": strict_error,
+            }
+        )
+    print(json.dumps({"atomic_reference": str(catalog.root), "elements": rows}, indent=2))
+    return 0
+
+
+def _simulation_element(simulation, explicit: str | None) -> str:
+    declared = simulation.attrs.get("element")
+    if isinstance(declared, bytes):
+        declared = declared.decode("utf-8", errors="replace")
+    inferred = normalize_element_symbol(str(declared)) if declared is not None else None
+    requested = normalize_element_symbol(explicit) if explicit is not None else None
+    if requested is not None and inferred is not None and requested != inferred:
+        raise ValueError(
+            f"Requested element {requested} does not match HDF5 group element {inferred}"
+        )
+    if requested is None and inferred is None:
+        raise ValueError("Element is absent from HDF5 attributes; supply --element")
+    result = requested or inferred
+    assert result is not None
+    return result
+
+
+def _load_atomic_reference(
+    config: ImagingConfig,
+    root: Path,
+    element: str,
+    mode: str,
+) -> AtomicReference:
+    return AtomicDataCatalog(root).load(
+        element,
+        mode=mode,
+        require_electron_neutral=config.include_electron_neutral_inverse_bremsstrahlung,
+        require_photoionization=config.include_photoionization,
+    )
+
+
 def _simulate_timestep(args: argparse.Namespace) -> int:
     config = ImagingConfig.from_json(args.config)
-    reference = args.atomic_reference.resolve()
+    if args.element is None:
+        raise ValueError("Standalone .dat frames have no element metadata; supply --element")
+    element = normalize_element_symbol(args.element)
+    reference = _load_atomic_reference(
+        config,
+        args.atomic_reference,
+        element,
+        args.atomic_mode,
+    )
     timestep = load_plasma_timestep(args.path)
     direct, lookup = _atomic_models(config, reference)
+    print(
+        f"Atomic model for {element}: {reference.status.fidelity}; "
+        f"electron-neutral={reference.status.electron_neutral_model}; "
+        f"photoionization charges={reference.status.photoionization_charge_states}",
+        flush=True,
+    )
     print(f"Simulating {timestep.source.name} ({timestep.size:,} AMR cells)...", flush=True)
     result = simulate_continuum_image(timestep, config, lookup)
     metadata = _base_metadata(config, reference)
@@ -356,12 +443,18 @@ def _simulate_timestep(args: argparse.Namespace) -> int:
 
 def _simulate_sequence(args: argparse.Namespace) -> int:
     config = ImagingConfig.from_json(args.config)
-    reference = args.atomic_reference.resolve()
     if args.simulation is None:
         simulations = list_h5_simulations(args.path)
         simulation = select_representative_simulation(simulations)
     else:
         simulation = get_h5_simulation(args.path, args.simulation)
+    element = _simulation_element(simulation, args.element)
+    reference = _load_atomic_reference(
+        config,
+        args.atomic_reference,
+        element,
+        args.atomic_mode,
+    )
     indices = list(range(0, len(simulation.timestep_keys), args.stride))
     if args.max_frames is not None:
         indices = indices[: args.max_frames]
@@ -380,9 +473,10 @@ def _simulate_sequence(args: argparse.Namespace) -> int:
     _, lookup = _atomic_models(config, reference)
     total = len(indices)
     print(
-        f"Simulating {total} frame(s) from {simulation.key!r}; "
+        f"Simulating {total} {element} frame(s) from {simulation.key!r}; "
         f"rspot={simulation.attrs.get('rspot')}, "
-        f"laser_power_wcm={simulation.attrs.get('laser_power_wcm')}",
+        f"laser_power_wcm={simulation.attrs.get('laser_power_wcm')}; "
+        f"atomic_fidelity={reference.status.fidelity}",
         flush=True,
     )
 
@@ -423,6 +517,14 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_parser = subparsers.add_parser("inspect-h5", help="Index an HDF5 container")
     inspect_parser.add_argument("path", type=Path)
     inspect_parser.set_defaults(function=_inspect_h5)
+
+    atomic_parser = subparsers.add_parser(
+        "atomic-status",
+        help="Report strict and approximate atomic-data readiness by element",
+    )
+    atomic_parser.add_argument("--atomic-reference", type=Path, required=True)
+    atomic_parser.add_argument("--elements", nargs="+")
+    atomic_parser.set_defaults(function=_atomic_status)
 
     timestep_parser = subparsers.add_parser("timestep", help="Simulate one .dat frame")
     timestep_parser.add_argument("path", type=Path)

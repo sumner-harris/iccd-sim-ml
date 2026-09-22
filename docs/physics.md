@@ -31,17 +31,25 @@ their `alphaPICu` output; those particular columns and the shifted mesh-level
 columns are flagged and ignored. This is not assumed for future exports:
 corrected 248-nm values are retained as useful validation references.
 
-Photoionization uses explicit Cu I-III ionization energies and Cu I-IV energy
-levels for LTE partition functions. Electron-neutral inverse
-bremsstrahlung averages the supplied momentum-transfer cross section over a
+Photoionization uses explicit element-specific ionization energies and energy
+levels for LTE partition functions. Electron-neutral inverse bremsstrahlung
+averages an element-specific momentum-transfer cross section over a
 Maxwell-Boltzmann electron-energy distribution. Electron-ion inverse
 bremsstrahlung includes charge weighting `n1 + 4 n2`. Stable implementations
 of the stimulated-emission factor use `-expm1(-h c / (lambda k T))`. The
-The legacy-notebook photoionization formula is a true absorption coefficient for
+legacy-notebook photoionization formula is a true absorption coefficient for
 laser heating. Before it enters LTE image transfer it is multiplied by this
 factor to obtain the net bound-free opacity required by detailed balance.
 The uncorrected true coefficient is retained separately for comparisons with
 the solver's saved 248-nm laser-absorption value.
+
+Atomic inputs are resolved through `data/reference/catalog.json`. Production
+strict mode refuses a requested opacity component when its element bundle is
+incomplete. The explicitly approximate mode retains the original solver's
+constant `Q = 1e-50 m^5` electron-neutral kernel and sets unavailable
+photoionization terms to zero. Its outputs carry an
+`approximate_incomplete_continuum` label. See
+[atomic-data.md](atomic-data.md).
 
 ## Emission and transfer
 

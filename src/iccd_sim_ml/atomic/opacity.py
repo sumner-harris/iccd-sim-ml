@@ -1,4 +1,4 @@
-"""Wavelength-dependent LTE continuum opacity for a copper plasma.
+"""Wavelength-dependent LTE continuum opacity for an atomic plasma.
 
 The model follows the equations in ``Laser-Plasma Absorption.ipynb`` while
 using SI units throughout.  It includes electron--neutral and electron--ion
@@ -283,7 +283,8 @@ class ContinuumOpacityModel:
     """Direct wavelength-dependent continuum-opacity calculator."""
 
     species: AtomicSpecies
-    momentum_transfer: MomentumTransferTable
+    momentum_transfer: MomentumTransferTable | None = None
+    electron_neutral_constant_m5: float | None = None
     quadrature_order: int = 48
     chunk_size: int = 65_536
 
@@ -292,6 +293,15 @@ class ContinuumOpacityModel:
             raise ValueError("quadrature_order must be between 8 and 128")
         if self.chunk_size < 1:
             raise ValueError("chunk_size must be positive")
+        if self.momentum_transfer is not None and self.electron_neutral_constant_m5 is not None:
+            raise ValueError(
+                "Choose either a momentum-transfer table or a constant electron-neutral kernel"
+            )
+        if self.electron_neutral_constant_m5 is not None and (
+            not np.isfinite(self.electron_neutral_constant_m5)
+            or self.electron_neutral_constant_m5 < 0.0
+        ):
+            raise ValueError("electron_neutral_constant_m5 must be finite and non-negative")
 
     @classmethod
     def from_momentum_transfer_file(
@@ -314,6 +324,46 @@ class ContinuumOpacityModel:
             chunk_size=chunk_size,
         )
 
+    @classmethod
+    def from_constant_electron_neutral(
+        cls,
+        species: AtomicSpecies,
+        coefficient_m5: float,
+        *,
+        chunk_size: int = 65_536,
+    ) -> ContinuumOpacityModel:
+        """Build an explicitly approximate constant-Q electron-neutral model."""
+
+        return cls(
+            species=species,
+            electron_neutral_constant_m5=coefficient_m5,
+            chunk_size=chunk_size,
+        )
+
+    def _electron_neutral_coefficient(
+        self,
+        wavelength_m: ArrayLike,
+        temperature_K: ArrayLike,
+    ) -> FloatArray:
+        if self.momentum_transfer is not None:
+            return electron_neutral_coefficient_m5(
+                wavelength_m,
+                temperature_K,
+                self.momentum_transfer,
+                quadrature_order=self.quadrature_order,
+                chunk_size=self.chunk_size,
+            )
+        wavelength, temperature = np.broadcast_arrays(
+            _finite_positive("wavelength_m", wavelength_m),
+            _finite_nonnegative("temperature_K", temperature_K),
+        )
+        if self.electron_neutral_constant_m5 is None:
+            return np.zeros(wavelength.shape, dtype=np.float64)
+        return _checked_nonnegative(
+            "constant electron-neutral coefficient",
+            stimulated_emission_factor(wavelength, temperature) * self.electron_neutral_constant_m5,
+        )
+
     def components(
         self,
         wavelength_m: ArrayLike,
@@ -333,13 +383,7 @@ class ContinuumOpacityModel:
             n1_m3,
             n2_m3,
         )
-        alpha_en = electron_neutral_coefficient_m5(
-            wave,
-            temp,
-            self.momentum_transfer,
-            quadrature_order=self.quadrature_order,
-            chunk_size=self.chunk_size,
-        ) * (ne * n0)
+        alpha_en = self._electron_neutral_coefficient(wave, temp) * (ne * n0)
         alpha_ei = electron_ion_coefficient_m5(wave, temp) * ne * (n1 + 4.0 * n2)
         effective_cross_sections = photoionization_effective_cross_sections_m2(
             self.species,
@@ -381,13 +425,7 @@ class ContinuumOpacityModel:
             raise ValueError("Lookup grids must be strictly increasing")
         temp_mesh = temperature[:, None]
         wave_mesh = wavelength[None, :]
-        en = electron_neutral_coefficient_m5(
-            wave_mesh,
-            temp_mesh,
-            self.momentum_transfer,
-            quadrature_order=self.quadrature_order,
-            chunk_size=self.chunk_size,
-        )
+        en = self._electron_neutral_coefficient(wave_mesh, temp_mesh)
         ei = electron_ion_coefficient_m5(wave_mesh, temp_mesh)
         pi = photoionization_effective_cross_sections_m2(
             self.species,

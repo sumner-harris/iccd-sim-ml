@@ -12,7 +12,10 @@ from typing import Any
 
 import numpy as np
 
+from iccd_sim_ml import __version__
+from iccd_sim_ml.atomic import AtomicDataCatalog, AtomicReference
 from iccd_sim_ml.data import DatasetManifest, SampleRecord
+from iccd_sim_ml.imaging import ImagingConfig, simulate_continuum_image
 from iccd_sim_ml.imaging.grid import build_parallel_side_view, resample_timestep
 from iccd_sim_ml.io import get_h5_simulation
 
@@ -83,6 +86,34 @@ class ProxyCacheConfig:
 
 
 @dataclass(frozen=True)
+class ContinuumCacheConfig:
+    """Production continuum-radiance cache configuration.
+
+    Source frames are simulated at the bracketing HDF5 times and the resulting
+    radiance images are linearly interpolated onto this canonical physical time
+    grid. No extrapolation or frame-index padding is permitted.
+    """
+
+    imaging: ImagingConfig
+    frame_times_s: tuple[float, ...]
+    atomic_mode: str = "strict"
+
+    def __post_init__(self) -> None:
+        times = tuple(float(value) for value in self.frame_times_s)
+        if len(times) < 2 or any(not np.isfinite(value) or value < 0.0 for value in times):
+            raise ValueError("frame_times_s must contain at least two finite non-negative values")
+        if any(
+            current >= following for current, following in zip(times[:-1], times[1:], strict=True)
+        ):
+            raise ValueError("frame_times_s must be strictly increasing")
+        if self.atomic_mode not in {"strict", "approximate"}:
+            raise ValueError("atomic_mode must be 'strict' or 'approximate'")
+        if self.imaging.radial_max_m is None or self.imaging.axial_max_m is None:
+            raise ValueError("Production continuum caching requires an explicit field of view")
+        object.__setattr__(self, "frame_times_s", times)
+
+
+@dataclass(frozen=True)
 class CacheResult:
     manifest: DatasetManifest
     hits: tuple[str, ...]
@@ -107,6 +138,14 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     return value
+
+
+def _source_file_identity(path: Path) -> dict[str, int] | None:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return {"size_bytes": stat.st_size, "mtime_ns": stat.st_mtime_ns}
 
 
 def _frame_keys(group: Any, h5py: Any) -> tuple[str, ...]:
@@ -181,20 +220,24 @@ def discover_balanced_subset(
                 f"Element {element} has {len(candidates)} valid simulations; "
                 f"{simulations_per_element} requested"
             )
-        # Interior quantiles avoid choosing only the most extreme laser cases.
-        fractions = np.arange(1, simulations_per_element + 1) / (simulations_per_element + 1)
-        indices = np.rint(fractions * (len(candidates) - 1)).astype(int)
+        if len(candidates) == simulations_per_element:
+            indices = np.arange(len(candidates))
+        else:
+            # Interior quantiles avoid choosing only the most extreme laser cases.
+            fractions = np.arange(1, simulations_per_element + 1) / (simulations_per_element + 1)
+            indices = np.rint(fractions * (len(candidates) - 1)).astype(int)
         if np.unique(indices).size != simulations_per_element:
             raise ValueError("Quantile selection did not produce unique simulations")
         selected.extend(candidates[index] for index in indices)
     return tuple(selected)
 
 
-def _cache_request(sample: SourceSample, config: ProxyCacheConfig) -> dict[str, Any]:
+def _proxy_cache_request(sample: SourceSample, config: ProxyCacheConfig) -> dict[str, Any]:
     return {
         "schema": 1,
         "backend": "plasma_state_proxy_smoke_test",
         "source": str(sample.source),
+        "source_file_identity": _source_file_identity(sample.source),
         "simulation_key": sample.simulation_key,
         "attrs": sample.attrs,
         "timestep_keys": list(sample.timestep_keys[: config.frame_count]),
@@ -268,7 +311,7 @@ def _write_cache(path: Path, sample: SourceSample, config: ProxyCacheConfig) -> 
     missing = [name for name in (*CONDITION_NAMES, *TARGET_NAMES) if name not in attrs]
     if missing:
         raise KeyError(f"Simulation {simulation.key} is missing attributes: {missing}")
-    request = _cache_request(sample, config)
+    request = _proxy_cache_request(sample, config)
     metadata = {
         "cache_key": _cache_key(request),
         "cache_request": request,
@@ -309,7 +352,7 @@ def ensure_proxy_cache(
     records: list[SampleRecord] = []
     for sample in samples:
         output = destination / f"{sample.sample_id}.npz"
-        key = _cache_key(_cache_request(sample, config))
+        key = _cache_key(_proxy_cache_request(sample, config))
         if _valid_cache(output, key, config):
             hits.append(sample.sample_id)
         else:
@@ -323,6 +366,227 @@ def ensure_proxy_cache(
                 simulation_id=f"{sample.source.name}::{sample.simulation_key}",
                 family_id=sample.element,
                 metadata={"cache_backend": "plasma_state_proxy_smoke_test"},
+            )
+        )
+    manifest_path = destination / "manifest.json"
+    DatasetManifest(tuple(records)).save(manifest_path)
+    return CacheResult(
+        manifest=DatasetManifest.load(manifest_path),
+        hits=tuple(hits),
+        misses=tuple(misses),
+    )
+
+
+def _continuum_cache_request(
+    sample: SourceSample,
+    config: ContinuumCacheConfig,
+    atomic_reference: AtomicReference,
+) -> dict[str, Any]:
+    return {
+        "schema": 1,
+        "backend": "lte_continuum_photon_radiance",
+        "package_version": __version__,
+        "source": str(sample.source),
+        "source_file_identity": _source_file_identity(sample.source),
+        "simulation_key": sample.simulation_key,
+        "attrs": sample.attrs,
+        "source_timestep_keys": list(sample.timestep_keys),
+        "frame_times_s": list(config.frame_times_s),
+        "imaging_config": config.imaging.to_dict(),
+        "atomic_data": atomic_reference.fingerprint(),
+    }
+
+
+def _valid_continuum_cache(
+    path: Path,
+    cache_key: str,
+    config: ContinuumCacheConfig,
+) -> bool:
+    if not path.is_file():
+        return False
+    expected_shape = (
+        len(config.frame_times_s),
+        config.imaging.radial_points,
+        config.imaging.axial_points,
+    )
+    try:
+        with np.load(path, allow_pickle=False) as product:
+            required = {
+                "video",
+                "times_s",
+                "conditions",
+                "regression_targets",
+                "class_index",
+                "metadata_json",
+            }
+            if not required.issubset(product.files):
+                return False
+            if product["video"].shape != expected_shape:
+                return False
+            if not np.isfinite(product["video"]).all() or np.any(product["video"] < 0.0):
+                return False
+            if not np.array_equal(
+                product["times_s"], np.asarray(config.frame_times_s, dtype=np.float64)
+            ):
+                return False
+            metadata = json.loads(str(product["metadata_json"].item()))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return False
+    return metadata.get("cache_key") == cache_key
+
+
+def _bracketing_indices(
+    source_times_s: np.ndarray,
+    target_times_s: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if target_times_s[0] < source_times_s[0] or target_times_s[-1] > source_times_s[-1]:
+        raise ValueError(
+            "Canonical time grid requires extrapolation: source covers "
+            f"[{source_times_s[0]:.9g}, {source_times_s[-1]:.9g}] s, target covers "
+            f"[{target_times_s[0]:.9g}, {target_times_s[-1]:.9g}] s"
+        )
+    upper = np.searchsorted(source_times_s, target_times_s, side="left")
+    upper = np.clip(upper, 0, source_times_s.size - 1)
+    exact = source_times_s[upper] == target_times_s
+    lower = np.where(exact, upper, np.maximum(upper - 1, 0))
+    denominator = source_times_s[upper] - source_times_s[lower]
+    fraction = np.zeros(target_times_s.shape, dtype=np.float64)
+    nonzero = denominator > 0.0
+    fraction[nonzero] = (target_times_s[nonzero] - source_times_s[lower[nonzero]]) / denominator[
+        nonzero
+    ]
+    return lower, upper, fraction
+
+
+def _write_continuum_cache(
+    path: Path,
+    sample: SourceSample,
+    config: ContinuumCacheConfig,
+    atomic_reference: AtomicReference,
+    opacity_lookup: Any,
+) -> None:
+    simulation = get_h5_simulation(sample.source, sample.simulation_key)
+    target_times = np.asarray(config.frame_times_s, dtype=np.float64)
+    lower, upper, fraction = _bracketing_indices(simulation.times_s, target_times)
+    source_indices = sorted(set(lower.tolist()) | set(upper.tolist()))
+    source_images: dict[int, np.ndarray] = {}
+    quality_flags: dict[int, tuple[str, ...]] = {}
+    for index, timestep in zip(
+        source_indices,
+        simulation.iter_timesteps(source_indices),
+        strict=True,
+    ):
+        frame = simulate_continuum_image(timestep, config.imaging, opacity_lookup)
+        source_images[index] = frame.image_photon_radiance
+        quality_flags[index] = frame.quality_flags
+    video = np.stack(
+        [
+            source_images[int(lo)] * (1.0 - weight) + source_images[int(hi)] * weight
+            for lo, hi, weight in zip(lower, upper, fraction, strict=True)
+        ]
+    ).astype(np.float32)
+    if not np.isfinite(video).all() or np.any(video < 0.0):
+        raise FloatingPointError("Continuum simulation produced invalid photon radiance")
+    attrs = simulation.attrs
+    missing = [name for name in (*CONDITION_NAMES, *TARGET_NAMES) if name not in attrs]
+    if missing:
+        raise KeyError(f"Simulation {simulation.key} is missing attributes: {missing}")
+    request = _continuum_cache_request(sample, config, atomic_reference)
+    metadata = {
+        "cache_key": _cache_key(request),
+        "cache_request": request,
+        "quantity": "band_integrated_photon_radiance",
+        "units": "photons s^-1 m^-2 sr^-1",
+        "scientific_use": atomic_reference.status.fidelity,
+        "condition_names": CONDITION_NAMES,
+        "regression_target_names": TARGET_NAMES,
+        "source_frame_indices": source_indices,
+        "source_frame_times_s": simulation.times_s[source_indices].tolist(),
+        "temporal_interpolation": "linear_in_photon_radiance",
+        "source_quality_flags": {str(index): list(flags) for index, flags in quality_flags.items()},
+        "atomic_data": atomic_reference.to_metadata(),
+    }
+    arrays = {
+        "video": video,
+        "times_s": target_times,
+        "conditions": np.asarray([attrs[name] for name in CONDITION_NAMES], dtype=np.float32),
+        "regression_targets": np.asarray([attrs[name] for name in TARGET_NAMES], dtype=np.float32),
+        "class_index": np.asarray(sample.class_index, dtype=np.int64),
+        "metadata_json": json.dumps(metadata, sort_keys=True),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    try:
+        with temporary.open("wb") as stream:
+            np.savez_compressed(stream, **arrays)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def ensure_continuum_cache(
+    samples: tuple[SourceSample, ...],
+    cache_dir: str | Path,
+    config: ContinuumCacheConfig,
+    atomic_reference_root: str | Path,
+) -> CacheResult:
+    """Reuse or construct physical continuum-radiance products by element."""
+
+    destination = Path(cache_dir).expanduser().resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    catalog = AtomicDataCatalog(atomic_reference_root)
+    atomic_by_element: dict[str, AtomicReference] = {}
+    lookup_by_element: dict[str, Any] = {}
+    for element in sorted({sample.element for sample in samples}):
+        reference = catalog.load(
+            element,
+            mode=config.atomic_mode,
+            require_electron_neutral=(
+                config.imaging.include_electron_neutral_inverse_bremsstrahlung
+            ),
+            require_photoionization=config.imaging.include_photoionization,
+        )
+        atomic_by_element[element] = reference
+        direct = reference.build_opacity_model()
+        temperature_grid = np.geomspace(
+            config.imaging.temperature_table_min_K,
+            config.imaging.temperature_table_max_K,
+            config.imaging.temperature_table_points,
+        )
+        lookup_by_element[element] = direct.build_lookup(
+            temperature_grid,
+            config.imaging.wavelengths_m,
+        )
+
+    hits: list[str] = []
+    misses: list[str] = []
+    records: list[SampleRecord] = []
+    for sample in samples:
+        reference = atomic_by_element[sample.element]
+        output = destination / f"{sample.sample_id}.npz"
+        key = _cache_key(_continuum_cache_request(sample, config, reference))
+        if _valid_continuum_cache(output, key, config):
+            hits.append(sample.sample_id)
+        else:
+            _write_continuum_cache(
+                output,
+                sample,
+                config,
+                reference,
+                lookup_by_element[sample.element],
+            )
+            misses.append(sample.sample_id)
+        records.append(
+            SampleRecord(
+                sample_id=sample.sample_id,
+                path=output,
+                element=sample.element,
+                simulation_id=f"{sample.source.name}::{sample.simulation_key}",
+                family_id=sample.element,
+                metadata={
+                    "cache_backend": "lte_continuum_photon_radiance",
+                    "atomic_fidelity": reference.status.fidelity,
+                },
             )
         )
     manifest_path = destination / "manifest.json"

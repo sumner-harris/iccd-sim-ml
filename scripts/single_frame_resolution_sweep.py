@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib.colors import LogNorm
 from scipy.interpolate import RegularGridInterpolator
 
-from iccd_sim_ml.atomic import ContinuumOpacityModel, load_copper_species
+from iccd_sim_ml.atomic import AtomicDataCatalog, normalize_element_symbol
 from iccd_sim_ml.imaging import ImagingConfig, simulate_continuum_image
 from iccd_sim_ml.io import get_h5_simulation
 
@@ -54,7 +54,12 @@ def _onto_reference(
     return interpolator(np.column_stack((x_grid.ravel(), z_grid.ravel()))).reshape(x_grid.shape)
 
 
-def _plot(results: list[dict[str, Any]], destination: Path, time_ns: float) -> None:
+def _plot(
+    results: list[dict[str, Any]],
+    destination: Path,
+    time_ns: float,
+    element: str,
+) -> None:
     maximum = max(float(np.max(item["image"])) for item in results)
     norm = LogNorm(vmin=maximum * 1.0e-12, vmax=maximum, clip=True)
     figure, axes = plt.subplots(
@@ -107,7 +112,7 @@ def _plot(results: list[dict[str, Any]], destination: Path, time_ns: float) -> N
         colorbar = figure.colorbar(shared_image, ax=axes[0].tolist(), shrink=0.82, pad=0.01)
         colorbar.set_label("photon radiance (photons s$^{-1}$ m$^{-2}$ sr$^{-1}$)")
     figure.suptitle(
-        f"Cu plume at {time_ns:g} ns: numerical-resolution sweep\n"
+        f"{element} plume at {time_ns:g} ns: numerical-resolution sweep\n"
         "top: shared absolute log scale; bottom: independently normalized morphology"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -121,12 +126,23 @@ def main() -> None:
     parser.add_argument("--simulation", required=True)
     parser.add_argument("--time-ns", type=float, required=True)
     parser.add_argument("--atomic-reference", type=Path, required=True)
+    parser.add_argument("--element")
+    parser.add_argument("--atomic-mode", choices=("strict", "approximate"), default="strict")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--radial-max-mm", type=float, default=15.0)
     parser.add_argument("--axial-max-mm", type=float, default=32.0)
     args = parser.parse_args()
 
     simulation = get_h5_simulation(args.h5, args.simulation)
+    declared = simulation.attrs.get("element")
+    if isinstance(declared, bytes):
+        declared = declared.decode("utf-8", errors="replace")
+    inferred = normalize_element_symbol(str(declared)) if declared is not None else None
+    element = normalize_element_symbol(args.element) if args.element is not None else inferred
+    if element is None:
+        raise ValueError("Element is absent from HDF5 attributes; supply --element")
+    if inferred is not None and element != inferred:
+        raise ValueError(f"Requested element {element} does not match HDF5 element {inferred}")
     times_ns = simulation.times_s * 1.0e9
     index = int(np.argmin(np.abs(times_ns - args.time_ns)))
     if not np.isclose(times_ns[index], args.time_ns, rtol=0.0, atol=1.0e-6):
@@ -135,9 +151,11 @@ def main() -> None:
         )
     timestep = next(simulation.iter_timesteps([index]))
 
-    reference = args.atomic_reference.expanduser().resolve()
-    species = load_copper_species(reference)
-    direct = ContinuumOpacityModel.from_momentum_transfer_file(species, reference / "MT_01_01")
+    atomic_reference = AtomicDataCatalog(args.atomic_reference).load(
+        element,
+        mode=args.atomic_mode,
+    )
+    direct = atomic_reference.build_opacity_model()
     output_dir = args.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
@@ -181,9 +199,11 @@ def main() -> None:
             "config": config.to_dict(),
             "runtime_s": runtime_s,
             "units": "photons s^-1 m^-2 sr^-1",
+            "element": element,
+            "atomic_data": atomic_reference.to_metadata(),
         }
         np.savez_compressed(
-            output_dir / f"Cu_3006ns_{profile.name}.npz",
+            output_dir / f"{element}_{times_ns[index]:g}ns_{profile.name}.npz",
             image_photon_radiance=image,
             x_m=simulated.x_m,
             z_m=simulated.z_m,
@@ -238,6 +258,8 @@ def main() -> None:
         "simulation_key": simulation.key,
         "source_timestep_key": simulation.timestep_keys[index],
         "time_ns": float(times_ns[index]),
+        "element": element,
+        "atomic_data": atomic_reference.to_metadata(),
         "field_of_view_mm": {
             "x_min": -args.radial_max_mm,
             "x_max": args.radial_max_mm,
@@ -256,7 +278,12 @@ def main() -> None:
         writer = csv.DictWriter(stream, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
-    _plot(results, output_dir / "Cu_3006ns_resolution_sweep.png", float(times_ns[index]))
+    _plot(
+        results,
+        output_dir / f"{element}_{times_ns[index]:g}ns_resolution_sweep.png",
+        float(times_ns[index]),
+        element,
+    )
     print(json.dumps(payload, indent=2), flush=True)
 
 

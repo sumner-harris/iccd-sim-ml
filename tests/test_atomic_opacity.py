@@ -5,6 +5,11 @@ from pathlib import Path
 
 import numpy as np
 
+from iccd_sim_ml.atomic.catalog import (
+    LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5,
+    AtomicDataCatalog,
+    AtomicDataUnavailableError,
+)
 from iccd_sim_ml.atomic.collisions import (
     MomentumTransferTable,
     load_momentum_transfer_table,
@@ -232,6 +237,58 @@ class ContinuumOpacityModelTests(unittest.TestCase):
             self.model.components(500.0e-9, 10_000.0, -1.0, 1.0, 1.0, 1.0)
         with self.assertRaises(ValueError):
             self.model.components(0.0, 10_000.0, 1.0, 1.0, 1.0, 1.0)
+
+    def test_constant_electron_neutral_fallback_matches_legacy_si_formula(self) -> None:
+        model = ContinuumOpacityModel.from_constant_electron_neutral(
+            AtomicSpecies("Fe", {}, {}),
+            LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5,
+        )
+        wavelength = 500.0e-9
+        temperature = 20_000.0
+        ne = 2.0e23
+        n0 = 3.0e24
+        result = model.components(wavelength, temperature, n0, ne, 0.0, 0.0)
+        expected = (
+            float(stimulated_emission_factor(wavelength, temperature))
+            * LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5
+            * ne
+            * n0
+        )
+        self.assertAlmostEqual(float(result.electron_neutral_m1) / expected, 1.0, places=14)
+        self.assertEqual(float(result.photoionization_m1), 0.0)
+
+
+class AtomicCatalogTests(unittest.TestCase):
+    def test_bundled_copper_reference_is_strict_ready(self) -> None:
+        root = Path(__file__).parents[1] / "data" / "reference"
+        reference = AtomicDataCatalog(root).load("cu", mode="strict")
+        self.assertEqual(reference.species.symbol, "Cu")
+        self.assertEqual(reference.status.fidelity, "element_specific_continuum")
+        self.assertEqual(reference.status.photoionization_charge_states, (0, 1, 2))
+        self.assertEqual(reference.status.missing_components, ())
+        self.assertIsNotNone(reference.momentum_transfer)
+        fingerprint = reference.fingerprint()
+        self.assertIn("species.json", fingerprint["files"])
+        self.assertIn("MT_01_01", fingerprint["files"])
+
+    def test_missing_element_fails_strict_and_is_explicit_in_approximate_mode(self) -> None:
+        root = Path(__file__).parents[1] / "data" / "reference"
+        catalog = AtomicDataCatalog(root)
+        with self.assertRaises(AtomicDataUnavailableError):
+            catalog.load("Fe", mode="strict")
+        reference = catalog.load("Fe", mode="approximate")
+        self.assertEqual(reference.species.symbol, "Fe")
+        self.assertEqual(reference.status.fidelity, "approximate_incomplete_continuum")
+        self.assertEqual(
+            reference.status.electron_neutral_model,
+            "legacy_constant_Q_approximation",
+        )
+        self.assertIn("electron_neutral_momentum_transfer", reference.status.missing_components)
+        self.assertIn(
+            "photoionization_charge_states:0,1,2",
+            reference.status.missing_components,
+        )
+        self.assertEqual(reference.build_opacity_model().species.symbol, "Fe")
 
 
 if __name__ == "__main__":

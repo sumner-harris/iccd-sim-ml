@@ -10,7 +10,8 @@ The same modules can be imported from a notebook or a cluster scheduler.
 HDF5 subset discovery
         |
         v
-cache.ensure_proxy_cache --------> manifest.json + immutable NPZ samples
+cache.ensure_proxy_cache or
+cache.ensure_continuum_cache ----> manifest.json + immutable NPZ samples
         |
         v
 make_known_material_split -------> split.json
@@ -55,10 +56,13 @@ tested before every element has the atomic inputs required by the continuum
 forward model.
 
 Do not combine proxy images with continuum-radiance images in a scientific
-dataset. Production manifests should point to the versioned `iccd-sim`
-continuum NPZs. The downstream datasets, splits, models, training loops, and
-reports require the same NPZ array contract and therefore do not need to be
-rewritten when a production cache backend is selected.
+dataset. `--cache-backend continuum` constructs versioned radiance NPZs
+directly. It uses a common physical-time grid, simulates the bracketing source
+frames, interpolates in photon radiance, and refuses extrapolation. Strict
+atomic mode is required for production; approximate mode is labeled and is
+intended only for integration and sensitivity studies. The downstream
+datasets, splits, models, training loops, and reports use the same NPZ array
+contract for both backends.
 
 ## Smoke-test split
 

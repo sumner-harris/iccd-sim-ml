@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "description": "Atomic-data readiness catalog for simulated and planned elements",
+  "target_elements": [
+    "Al", "As", "B", "Be", "Bi", "C", "Ca", "Co", "Cs", "Cu",
+    "Fe", "Ge", "Ho", "In", "Mg", "Mo", "Na", "Nb", "Ni", "P",
+    "Pr", "Pt", "Rb", "Sb", "Sc", "Se", "Si", "Sm", "Sr", "Ta",
+    "Te", "Ti", "Tm", "V", "W", "Zn", "Zr"
+  ],
+  "species": {
+    "Cu": "cu/species.json"
+  },
+  "approximate_electron_neutral_kernel_m5": 1e-50,
+  "provenance": {
+    "target_element_source": "HDF5 filename inventory plus planned C and As",
+    "nist_asd_doi": "10.18434/T4W30F"
+  }
+}
