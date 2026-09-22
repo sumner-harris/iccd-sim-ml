@@ -1,0 +1,38 @@
+{
+  "video_shape": [1, 16, 64, 64],
+  "encoder": {
+    "input_channels": 1,
+    "stage_channels": [32, 64, 128, 256],
+    "blocks_per_stage": 2,
+    "embedding_dim": 256,
+    "dropout": 0.0
+  },
+  "laser_condition_names": ["laser_power_wcm", "rspot"],
+  "property_names": [
+    "cp_metal",
+    "h_vapor",
+    "kappa_metal",
+    "laser_reflectivity",
+    "mass_density_metal",
+    "t_boil",
+    "tcrit"
+  ],
+  "laser_condition_dim": 2,
+  "material_property_dim": 7,
+  "num_classes": 6,
+  "latent_dim": 64,
+  "laser_hidden": [32],
+  "laser_embedding_dim": 32,
+  "condition_hidden": [128],
+  "condition_embedding_dim": 64,
+  "posterior_hidden": [256],
+  "prior_hidden": [128],
+  "regression_hidden": [256, 64],
+  "classification_hidden": [128, 32],
+  "decoder_seed_shape": [2, 4, 4],
+  "decoder_channels": [128, 64, 32, 16],
+  "group_norm_groups": 8,
+  "dropout": 0.0,
+  "log_variance_min": -12.0,
+  "log_variance_max": 8.0
+}

@@ -1,0 +1,11 @@
+{
+  "description": "User-supplied distilled Cu atomic reference files",
+  "nist_asd_doi": "10.18434/T4W30F",
+  "files": {
+    "CuIEnergyC.txt": "sha256:5b4d3399720ec9415dcac01199f3abe903f1a6471724816e33446c9363406541",
+    "CuIIEnergyC.txt": "sha256:0368272166803c3f038eab542652c59178b564198c2279f3b1e8a2193a7badf3",
+    "CuIIIEnergyC.txt": "sha256:0177cfe3654fe2b17e51761bc88eb0bd1c2e226745e29f92df7fd051725aede9",
+    "CuIVEnergyC.txt": "sha256:a41130676b64c6545bb1c772b2308b918f9cffae0033685e834500af1ccf40ab",
+    "MT_01_01": "sha256:bd9190391de1de5d1922adfe8a4fe15bdeadf372052ab16da49a292ac748782"
+  }
+}

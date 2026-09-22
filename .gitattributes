@@ -1,0 +1,11 @@
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.ipynb text eol=lf
+*.npz binary
+*.h5 binary
+*.png binary
+data/reference/** -whitespace
+legacy/** -whitespace

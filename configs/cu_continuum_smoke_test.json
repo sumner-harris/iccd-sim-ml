@@ -1,0 +1,17 @@
+{
+  "wavelength_min_nm": 300.0,
+  "wavelength_max_nm": 800.0,
+  "wavelength_points": 12,
+  "radial_points": 24,
+  "axial_points": 24,
+  "line_of_sight_points": 32,
+  "temperature_table_min_K": 300.0,
+  "temperature_table_max_K": 100000.0,
+  "temperature_table_points": 80,
+  "detector_response": "flat",
+  "include_photoionization": true,
+  "include_electron_neutral_inverse_bremsstrahlung": true,
+  "include_electron_ion_inverse_bremsstrahlung": true,
+  "apply_spatial_optics": false,
+  "apply_sensor_effects": false
+}
