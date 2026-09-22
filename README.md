@@ -153,6 +153,46 @@ interpretation. See
 architecture, training/API pattern, uncertainty semantics, and evaluation
 limits.
 
+## End-to-end training and reports
+
+[`scripts/run_training_pipeline.py`](scripts/run_training_pipeline.py) is the
+combined experiment entry point. It delegates to modules in
+`iccd_sim_ml.pipeline` for each stage rather than implementing caching,
+training, and plotting inline. In one invocation it:
+
+1. selects a deterministic element/simulation subset;
+2. validates existing NPZ cache fingerprints and builds only missing products;
+3. creates a leakage-safe within-element simulation split and train-only scalers;
+4. trains regression, classification, the joint CVAE, or any requested subset;
+5. saves checkpoints, metrics JSON, learning curves, regression parity plots,
+   classification confusion matrices, and CVAE generation-error maps.
+
+For the lightweight three-element smoke workflow:
+
+```bash
+python scripts/run_training_pipeline.py \
+  --data-dir /mnt/shared_drive/plasma_sim_data \
+  --elements Al Cu V \
+  --simulations-per-element 3 \
+  --cache-dir work/cache \
+  --output-dir work/reports \
+  --models all \
+  --epochs 2 \
+  --architecture smoke \
+  --device auto
+```
+
+The multi-element smoke cache backend creates a deterministic projection of
+plasma temperature and charge density. It is explicitly labeled
+`pipeline_smoke_test_only` and must not be interpreted as ICCD radiance. Its
+purpose is to exercise the complete software and GPU workflow while atomic
+continuum inputs are currently available only for Cu. Scientific training
+should use cached products from the validated continuum simulator, extended
+with element-specific atomic data, without changing the downstream experiment
+and report modules. See
+[`docs/training-workflow.md`](docs/training-workflow.md) for the module
+boundaries and artifact layout.
+
 ## Repository map
 
 ```text
@@ -169,6 +209,7 @@ src/iccd_sim_ml/
   data/                  processed-video datasets, transforms, group splits
   models/                maintained video encoders and prediction heads
   training/              training and provenance-rich checkpoints
+  pipeline/              cache, experiment orchestration, and report plots
 tests/                   unit and analytic physics tests
 ```
 
