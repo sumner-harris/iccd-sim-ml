@@ -171,7 +171,7 @@ For the lightweight three-element smoke workflow:
 
 ```bash
 python scripts/run_training_pipeline.py \
-  --data-dir /mnt/shared_drive/plasma_sim_data \
+  --data-dir /path/to/plasma_sim_data \
   --elements Al Cu V \
   --simulations-per-element 3 \
   --cache-dir work/cache \
