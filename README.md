@@ -88,6 +88,20 @@ older HDF5 layouts are rejected explicitly. See
 [hdf5-schema.md](docs/hdf5-schema.md) for the field mapping and streaming
 policy.
 
+Run a coupled numerical-resolution sweep for a single HDF5 frame with:
+
+```powershell
+uv run python scripts\single_frame_resolution_sweep.py "C:\path\to\Cu_6.h5" `
+  --simulation Cu_3_68 `
+  --time-ns 3006 `
+  --atomic-reference data\reference\cu `
+  --output-dir outputs\Cu_3006ns_resolution_sweep
+```
+
+The script saves each physical-radiance array, a shared-scale comparison plot,
+and JSON/CSV convergence metrics. Every profile uses the same declared field
+of view so differences measure numerical resolution rather than cropping.
+
 ## Joint conditional model
 
 The optional PyTorch package also includes one jointly trained conditional
