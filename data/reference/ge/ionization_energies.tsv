@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ge I	0	7.899435			0.000012	L3935,L12369
+Ge II	1	15.93461			0.000025	L7213
+Ge III	2	34.0576			0.0012	L7213,L11268
+Ge IV	3	45.7155			0.0012	L7213,L6924

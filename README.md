@@ -92,11 +92,23 @@ uv run iccd-sim atomic-status --atomic-reference data\reference
 
 The target catalog contains Al, As, B, Be, Bi, C, Ca, Co, Cs, Cu, Fe, Ge,
 Ho, In, Mg, Mo, Na, Nb, Ni, P, Pr, Pt, Rb, Sb, Sc, Se, Si, Sm, Sr, Ta, Te,
-Ti, Tm, V, W, Zn, and Zr. Every element uses the declared fixed
+Ti, Tm, V, W, Zn, and Zr. All 37 elements have locally cached NIST ASD I--IV
+bound-level tables and ionization thresholds. Every element uses the declared fixed
 `Q = 1e-50 m^5` electron-neutral model. Strict mode is the production default
 and refuses incomplete element-specific photoionization inputs.
 `--atomic-mode approximate` is available only for explicitly labeled
 sensitivity and software tests. See [atomic-data.md](docs/atomic-data.md).
+
+Regenerate or update the local atomic database from the live NIST site with:
+
+```powershell
+uv run python scripts\build_nist_level_database.py
+```
+
+The builder records exact query URLs, retrieval timestamps, response and file
+checksums, NIST version, ionization cutoffs, and excluded-level counts. It keeps
+only absolute levels below the same-stage ionization limit for partition-function
+and photoionization calculations.
 
 The maintained HDF5 reader targets the current 34-column solver export only;
 older HDF5 layouts are rejected explicitly. See

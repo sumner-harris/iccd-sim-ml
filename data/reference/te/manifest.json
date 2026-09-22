@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:59+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:b3b09398dd59ece687aacb4f24ca3e4eaa4e4d72c50b31807bb4e7f5a311bd5b",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Te&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:2370d49e6626315fa1174581ce2ed1c52f225954af10afbf41c8174103d35ec1",
+    "retrieved_at_utc": "2026-09-22T18:10:56+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 9.009808,
+        "prefix": "",
+        "references": "L21109",
+        "spectrum": "Te I",
+        "suffix": "",
+        "uncertainty_ev": "0.000006"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 18.6,
+        "prefix": "",
+        "references": "L3546",
+        "spectrum": "Te II",
+        "suffix": "",
+        "uncertainty_ev": "0.4"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 27.84,
+        "prefix": "",
+        "references": "L17749",
+        "spectrum": "Te III",
+        "suffix": "",
+        "uncertainty_ev": "0.04"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 37.4155,
+        "prefix": "",
+        "references": "L16261",
+        "spectrum": "Te IV",
+        "suffix": "",
+        "uncertainty_ev": "0.0012"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 119,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Te_I_levels.tsv",
+      "file_sha256": "sha256:e642b6d3c46d1415afdae5fcecb15eb74c984f5bdc3d026c732c43cf51d96416",
+      "ionization_cutoff_ev": 9.009808,
+      "parsed_levels": 119,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Te+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 120,
+      "response_sha256": "sha256:927448491131762893485c1b2012d63298e79d51f36bf42ebffb898e45200100",
+      "retrieved_at_utc": "2026-09-22T18:10:56+00:00",
+      "spectrum": "Te I"
+    },
+    "1": {
+      "bound_levels_written": 128,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Te_II_levels.tsv",
+      "file_sha256": "sha256:12b8b91c55652d84e8e6ffd84cdc4cf9db3165dd071f503dd0b4019adf07f793",
+      "ionization_cutoff_ev": 18.6,
+      "parsed_levels": 128,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Te+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 129,
+      "response_sha256": "sha256:9400348d0277f65b64d46830049d8ec1bd159f3da753afd859241844c7ce8b3c",
+      "retrieved_at_utc": "2026-09-22T18:10:57+00:00",
+      "spectrum": "Te II"
+    },
+    "2": {
+      "bound_levels_written": 51,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Te_III_levels.tsv",
+      "file_sha256": "sha256:7a02c6f057a43b2d52bd69a6a379ba60658a47596e55b0ae23fcea0b2424fb7c",
+      "ionization_cutoff_ev": 27.84,
+      "parsed_levels": 51,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Te+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 52,
+      "response_sha256": "sha256:fa3ca96dcd7d3c4c2c9b9a955fb0be227134d57a29c27d8312d436375bd7bf5d",
+      "retrieved_at_utc": "2026-09-22T18:10:58+00:00",
+      "spectrum": "Te III"
+    },
+    "3": {
+      "bound_levels_written": 15,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Te_IV_levels.tsv",
+      "file_sha256": "sha256:71619b79a7dc8641b4ea5c2da262be5228b7d1dcf73b9b58353902368a339a08",
+      "ionization_cutoff_ev": 37.4155,
+      "parsed_levels": 15,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Te+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 16,
+      "response_sha256": "sha256:d4d24c15ca419ded67ff82cdd622e2964cb012d6f4ad52381815dfdbccb42473",
+      "retrieved_at_utc": "2026-09-22T18:10:59+00:00",
+      "spectrum": "Te IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:741305d97903bf8d6abe06633d14a2531bc78d887f7ec57f13e841e1aaf9f204",
+  "symbol": "Te"
+}

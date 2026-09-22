@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ti I	0	6.82812			0.000012	L17996
+Ti II	1	13.5755			0.0025	L7185,L5432
+Ti III	2	27.49171			0.00025	L7185,L3593
+Ti IV	3	43.26717			0.00019	L7185,L2753

@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:16+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:113b191d038f0ca0e4d637a225600a94eff95aa0c4b4f7b7abdb0caafe43d051",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Nb&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:6ab625a987836a31abb516d2ae6bab2a1d9b6a2387fb333eb50dfbf201c124e0",
+    "retrieved_at_utc": "2026-09-22T18:10:12+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 6.75885,
+        "prefix": "",
+        "references": "L6829",
+        "spectrum": "Nb I",
+        "suffix": "",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 1,
+        "energy_ev": 14.32,
+        "prefix": "[",
+        "references": "L3466",
+        "spectrum": "Nb II",
+        "suffix": "]",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 2,
+        "energy_ev": 25.04,
+        "prefix": "[",
+        "references": "L17276",
+        "spectrum": "Nb III",
+        "suffix": "]",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 3,
+        "energy_ev": 37.611,
+        "prefix": "",
+        "references": "L12094",
+        "spectrum": "Nb IV",
+        "suffix": "",
+        "uncertainty_ev": ""
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 378,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Nb_I_levels.tsv",
+      "file_sha256": "sha256:d06c54acf2ad663bba2610bb18bfb8fc8970be595d1c01e571e09e6b85adae45",
+      "ionization_cutoff_ev": 6.75885,
+      "parsed_levels": 378,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Nb+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 379,
+      "response_sha256": "sha256:f8afd4f25e62d5e63e802b3c76e6c929dc25367f9fde4648bd8afc31e14b31c1",
+      "retrieved_at_utc": "2026-09-22T18:10:13+00:00",
+      "spectrum": "Nb I"
+    },
+    "1": {
+      "bound_levels_written": 353,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Nb_II_levels.tsv",
+      "file_sha256": "sha256:49abc1339a0228d9221a5747cb676f22b7b4b270089d00aef6446f5e70256656",
+      "ionization_cutoff_ev": 14.32,
+      "parsed_levels": 353,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Nb+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 354,
+      "response_sha256": "sha256:883a4d70488c010326d9d0ebfba479e45eefe541ce24a0b6ba7da4cd7c68e34a",
+      "retrieved_at_utc": "2026-09-22T18:10:14+00:00",
+      "spectrum": "Nb II"
+    },
+    "2": {
+      "bound_levels_written": 188,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Nb_III_levels.tsv",
+      "file_sha256": "sha256:9bb8f81600a083f48145bb6111e0eece4ea9e60f714e6e8e0696118fa550f4b4",
+      "ionization_cutoff_ev": 25.04,
+      "parsed_levels": 188,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Nb+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 189,
+      "response_sha256": "sha256:fb4b30fd8701274211677a1b811b2c6381be98a6fe1b8e408346e25c92207ec9",
+      "retrieved_at_utc": "2026-09-22T18:10:15+00:00",
+      "spectrum": "Nb III"
+    },
+    "3": {
+      "bound_levels_written": 182,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Nb_IV_levels.tsv",
+      "file_sha256": "sha256:a79d36d76a6c69d167cc553932506bb004d65fe4a91310a3b0dc3ce0fe6d71c4",
+      "ionization_cutoff_ev": 37.611,
+      "parsed_levels": 182,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Nb+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 183,
+      "response_sha256": "sha256:1a11b74fe59fd329676def436e099a3706386dc3d2ce98b8de120f2808bd33bc",
+      "retrieved_at_utc": "2026-09-22T18:10:15+00:00",
+      "spectrum": "Nb IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:fe10e5fb5becc2f1ee35db7f342a8e1c2f502d91d1b9304ff23d81908e1dd4c3",
+  "symbol": "Nb"
+}

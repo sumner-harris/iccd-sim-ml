@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Si I	0	8.15168			0.00003	L5815
+Si II	1	16.34585			0.00004	L5815
+Si III	2	33.493			0.00009	L5815
+Si IV	3	45.14179			0.00007	L5815,L6098

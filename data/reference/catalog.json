@@ -1,18 +1,317 @@
 {
-  "schema_version": 1,
   "description": "Atomic-data readiness catalog for simulated and planned elements",
-  "target_elements": [
-    "Al", "As", "B", "Be", "Bi", "C", "Ca", "Co", "Cs", "Cu",
-    "Fe", "Ge", "Ho", "In", "Mg", "Mo", "Na", "Nb", "Ni", "P",
-    "Pr", "Pt", "Rb", "Sb", "Sc", "Se", "Si", "Sm", "Sr", "Ta",
-    "Te", "Ti", "Tm", "V", "W", "Zn", "Zr"
-  ],
-  "species": {
-    "Cu": "cu/species.json"
-  },
   "electron_neutral_fixed_Q_m5": 1e-50,
   "provenance": {
-    "target_element_source": "HDF5 filename inventory plus planned C and As",
-    "nist_asd_doi": "10.18434/T4W30F"
-  }
+    "level_database": {
+      "bound_level_counts": {
+        "Al": {
+          "0": 114,
+          "1": 217,
+          "2": 58,
+          "3": 109
+        },
+        "As": {
+          "0": 105,
+          "1": 166,
+          "2": 21,
+          "3": 33
+        },
+        "B": {
+          "0": 78,
+          "1": 103,
+          "2": 62,
+          "3": 155
+        },
+        "Be": {
+          "0": 109,
+          "1": 77,
+          "2": 155,
+          "3": 148
+        },
+        "Bi": {
+          "0": 39,
+          "1": 75,
+          "2": 62,
+          "3": 37
+        },
+        "C": {
+          "0": 401,
+          "1": 179,
+          "2": 130,
+          "3": 90
+        },
+        "Ca": {
+          "0": 455,
+          "1": 69,
+          "2": 175,
+          "3": 70
+        },
+        "Co": {
+          "0": 329,
+          "1": 480,
+          "2": 287,
+          "3": 296
+        },
+        "Cs": {
+          "0": 174,
+          "1": 303,
+          "2": 173,
+          "3": 115
+        },
+        "Cu": {
+          "0": 152,
+          "1": 467,
+          "2": 389,
+          "3": 297
+        },
+        "Fe": {
+          "0": 846,
+          "1": 1027,
+          "2": 595,
+          "3": 276
+        },
+        "Ge": {
+          "0": 391,
+          "1": 80,
+          "2": 47,
+          "3": 39
+        },
+        "Ho": {
+          "0": 230,
+          "1": 49,
+          "2": 121,
+          "3": 20
+        },
+        "In": {
+          "0": 104,
+          "1": 194,
+          "2": 27,
+          "3": 17
+        },
+        "Mg": {
+          "0": 222,
+          "1": 82,
+          "2": 105,
+          "3": 164
+        },
+        "Mo": {
+          "0": 414,
+          "1": 238,
+          "2": 119,
+          "3": 80
+        },
+        "Na": {
+          "0": 139,
+          "1": 150,
+          "2": 114,
+          "3": 90
+        },
+        "Nb": {
+          "0": 378,
+          "1": 353,
+          "2": 188,
+          "3": 182
+        },
+        "Ni": {
+          "0": 285,
+          "1": 718,
+          "2": 344,
+          "3": 235
+        },
+        "P": {
+          "0": 284,
+          "1": 160,
+          "2": 113,
+          "3": 207
+        },
+        "Pr": {
+          "0": 410,
+          "1": 200,
+          "2": 400,
+          "3": 88
+        },
+        "Pt": {
+          "0": 201,
+          "1": 278,
+          "2": 1,
+          "3": 237
+        },
+        "Rb": {
+          "0": 231,
+          "1": 165,
+          "2": 91,
+          "3": 130
+        },
+        "Sb": {
+          "0": 147,
+          "1": 105,
+          "2": 23,
+          "3": 28
+        },
+        "Sc": {
+          "0": 337,
+          "1": 168,
+          "2": 43,
+          "3": 127
+        },
+        "Se": {
+          "0": 172,
+          "1": 77,
+          "2": 51,
+          "3": 28
+        },
+        "Si": {
+          "0": 452,
+          "1": 95,
+          "2": 175,
+          "3": 54
+        },
+        "Sm": {
+          "0": 472,
+          "1": 376,
+          "2": 42,
+          "3": 20
+        },
+        "Sr": {
+          "0": 238,
+          "1": 70,
+          "2": 149,
+          "3": 254
+        },
+        "Ta": {
+          "0": 283,
+          "1": 125,
+          "2": 1,
+          "3": 1
+        },
+        "Te": {
+          "0": 119,
+          "1": 128,
+          "2": 51,
+          "3": 15
+        },
+        "Ti": {
+          "0": 558,
+          "1": 252,
+          "2": 199,
+          "3": 39
+        },
+        "Tm": {
+          "0": 536,
+          "1": 362,
+          "2": 120,
+          "3": 7
+        },
+        "V": {
+          "0": 548,
+          "1": 407,
+          "2": 299,
+          "3": 99
+        },
+        "W": {
+          "0": 507,
+          "1": 263,
+          "2": 235,
+          "3": 105
+        },
+        "Zn": {
+          "0": 209,
+          "1": 70,
+          "2": 315,
+          "3": 243
+        },
+        "Zr": {
+          "0": 258,
+          "1": 135,
+          "2": 139,
+          "3": 34
+        }
+      },
+      "builder": "scripts/build_nist_level_database.py",
+      "doi": "10.18434/T4W30F",
+      "generated_at_utc": "2026-09-22T18:11:20+00:00",
+      "source": "NIST Atomic Spectra Database"
+    },
+    "nist_asd_doi": "10.18434/T4W30F",
+    "target_element_source": "HDF5 filename inventory plus planned C and As"
+  },
+  "schema_version": 1,
+  "species": {
+    "Al": "al/species.json",
+    "As": "as/species.json",
+    "B": "b/species.json",
+    "Be": "be/species.json",
+    "Bi": "bi/species.json",
+    "C": "c/species.json",
+    "Ca": "ca/species.json",
+    "Co": "co/species.json",
+    "Cs": "cs/species.json",
+    "Cu": "cu/species.json",
+    "Fe": "fe/species.json",
+    "Ge": "ge/species.json",
+    "Ho": "ho/species.json",
+    "In": "in/species.json",
+    "Mg": "mg/species.json",
+    "Mo": "mo/species.json",
+    "Na": "na/species.json",
+    "Nb": "nb/species.json",
+    "Ni": "ni/species.json",
+    "P": "p/species.json",
+    "Pr": "pr/species.json",
+    "Pt": "pt/species.json",
+    "Rb": "rb/species.json",
+    "Sb": "sb/species.json",
+    "Sc": "sc/species.json",
+    "Se": "se/species.json",
+    "Si": "si/species.json",
+    "Sm": "sm/species.json",
+    "Sr": "sr/species.json",
+    "Ta": "ta/species.json",
+    "Te": "te/species.json",
+    "Ti": "ti/species.json",
+    "Tm": "tm/species.json",
+    "V": "v/species.json",
+    "W": "w/species.json",
+    "Zn": "zn/species.json",
+    "Zr": "zr/species.json"
+  },
+  "target_elements": [
+    "Al",
+    "As",
+    "B",
+    "Be",
+    "Bi",
+    "C",
+    "Ca",
+    "Co",
+    "Cs",
+    "Cu",
+    "Fe",
+    "Ge",
+    "Ho",
+    "In",
+    "Mg",
+    "Mo",
+    "Na",
+    "Nb",
+    "Ni",
+    "P",
+    "Pr",
+    "Pt",
+    "Rb",
+    "Sb",
+    "Sc",
+    "Se",
+    "Si",
+    "Sm",
+    "Sr",
+    "Ta",
+    "Te",
+    "Ti",
+    "Tm",
+    "V",
+    "W",
+    "Zn",
+    "Zr"
+  ]
 }

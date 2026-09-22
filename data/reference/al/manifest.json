@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:09:19+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:49312f5f41a4e1f1f7dad9bfc8a7d320af8004f5795ea95a759453725d0838f5",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Al&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:44eb45bd71b6908c1490c7de2d31b8d121b4de4dcc799f015da99002846d6067",
+    "retrieved_at_utc": "2026-09-22T18:09:16+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 5.985769,
+        "prefix": "",
+        "references": "L7215,L10321",
+        "spectrum": "Al I",
+        "suffix": "",
+        "uncertainty_ev": "0.000003"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 18.82855,
+        "prefix": "",
+        "references": "L7215",
+        "spectrum": "Al II",
+        "suffix": "",
+        "uncertainty_ev": "0.00005"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 28.447642,
+        "prefix": "",
+        "references": "L4714,L277",
+        "spectrum": "Al III",
+        "suffix": "",
+        "uncertainty_ev": "0.000025"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 119.9924,
+        "prefix": "",
+        "references": "L4714,L2829",
+        "spectrum": "Al IV",
+        "suffix": "",
+        "uncertainty_ev": "0.0019"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 114,
+      "excluded_at_or_above_threshold": 73,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Al_I_levels.tsv",
+      "file_sha256": "sha256:00beeeb2b7da30314d8b85e2d69d5b7be4630d2ee4407aeda0930eadda99c818",
+      "ionization_cutoff_ev": 5.985769,
+      "parsed_levels": 187,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Al+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 192,
+      "response_sha256": "sha256:c4ad53d4d8f0dc2ad0ec4b85cb6f2525eec86cd432bdc4399a9588f8ef8ada27",
+      "retrieved_at_utc": "2026-09-22T18:09:16+00:00",
+      "spectrum": "Al I"
+    },
+    "1": {
+      "bound_levels_written": 217,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Al_II_levels.tsv",
+      "file_sha256": "sha256:fe45e68334a8f5858a0eb9334764dce685a894c217d4b5744d3438e59e754ea4",
+      "ionization_cutoff_ev": 18.82855,
+      "parsed_levels": 217,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Al+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 219,
+      "response_sha256": "sha256:0de57c83a22e3b9419bc1ab8f36a69b0fa452777668e1da5089e19294b7a9581",
+      "retrieved_at_utc": "2026-09-22T18:09:17+00:00",
+      "spectrum": "Al II"
+    },
+    "2": {
+      "bound_levels_written": 58,
+      "excluded_at_or_above_threshold": 25,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Al_III_levels.tsv",
+      "file_sha256": "sha256:dafeedf8785cd4271ef92dd2bd7a8d5872e38204f7cd143a0622852e7f64dd32",
+      "ionization_cutoff_ev": 28.447642,
+      "parsed_levels": 83,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Al+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 84,
+      "response_sha256": "sha256:46943abec7ec6412e38333fe6b4abaa80f14f1da0e3314b2de3aba360baaffa5",
+      "retrieved_at_utc": "2026-09-22T18:09:18+00:00",
+      "spectrum": "Al III"
+    },
+    "3": {
+      "bound_levels_written": 109,
+      "excluded_at_or_above_threshold": 6,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Al_IV_levels.tsv",
+      "file_sha256": "sha256:e3d6ec41aecdaf3301ff8ca0d212f39c157b157fba7a7a86873f95372da9e336",
+      "ionization_cutoff_ev": 119.9924,
+      "parsed_levels": 115,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Al+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 118,
+      "response_sha256": "sha256:0337769d765cb5a839d8e46992ee7a3968e3650095c2862ba61a197d0e538992",
+      "retrieved_at_utc": "2026-09-22T18:09:19+00:00",
+      "spectrum": "Al IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:fb51a1ccc46b5a760513769fa5e24e4a7e00a1df776fe93ad39ff7492e7144f2",
+  "symbol": "Al"
+}

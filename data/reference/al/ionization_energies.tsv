@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Al I	0	5.985769			0.000003	L7215,L10321
+Al II	1	18.82855			0.00005	L7215
+Al III	2	28.447642			0.000025	L4714,L277
+Al IV	3	119.9924			0.0019	L4714,L2829

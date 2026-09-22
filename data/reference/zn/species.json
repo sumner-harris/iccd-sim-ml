@@ -1,0 +1,25 @@
+{
+  "ionization_energy_ev_by_charge": {
+    "0": 9.394197,
+    "1": 17.96439,
+    "2": 39.7233,
+    "3": 59.573
+  },
+  "level_files": {
+    "0": "Zn_I_levels.tsv",
+    "1": "Zn_II_levels.tsv",
+    "2": "Zn_III_levels.tsv",
+    "3": "Zn_IV_levels.tsv"
+  },
+  "provenance": {
+    "description": "Bound atomic energy levels and ionization thresholds retrieved from the live NIST Atomic Spectra Database",
+    "level_filter": "absolute numeric levels with 0 <= E < same-stage ionization energy",
+    "manifest": "manifest.json",
+    "nist_asd_doi": "10.18434/T4W30F",
+    "nist_asd_versions": [
+      "5.12"
+    ]
+  },
+  "schema_version": 1,
+  "symbol": "Zn"
+}

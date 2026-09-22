@@ -1,0 +1,25 @@
+{
+  "ionization_energy_ev_by_charge": {
+    "0": 7.899435,
+    "1": 15.93461,
+    "2": 34.0576,
+    "3": 45.7155
+  },
+  "level_files": {
+    "0": "Ge_I_levels.tsv",
+    "1": "Ge_II_levels.tsv",
+    "2": "Ge_III_levels.tsv",
+    "3": "Ge_IV_levels.tsv"
+  },
+  "provenance": {
+    "description": "Bound atomic energy levels and ionization thresholds retrieved from the live NIST Atomic Spectra Database",
+    "level_filter": "absolute numeric levels with 0 <= E < same-stage ionization energy",
+    "manifest": "manifest.json",
+    "nist_asd_doi": "10.18434/T4W30F",
+    "nist_asd_versions": [
+      "5.12"
+    ]
+  },
+  "schema_version": 1,
+  "symbol": "Ge"
+}

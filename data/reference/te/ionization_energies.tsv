@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Te I	0	9.009808			0.000006	L21109
+Te II	1	18.6			0.4	L3546
+Te III	2	27.84			0.04	L17749
+Te IV	3	37.4155			0.0012	L16261

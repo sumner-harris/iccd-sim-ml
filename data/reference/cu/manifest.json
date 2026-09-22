@@ -1,11 +1,114 @@
 {
-  "description": "User-supplied distilled Cu atomic reference files",
+  "generated_at_utc": "2026-09-22T18:09:49+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:d5954269fe0729ae3eb49d0d26617e4b300dd99e1a9e4d5589688fb2d5ab5835",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Cu&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:4c42db5513692dc0abaf6d8b0d88b067d43583d4e3e32606cc951aa7310bb9a7",
+    "retrieved_at_utc": "2026-09-22T18:09:45+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.72638,
+        "prefix": "",
+        "references": "L14897",
+        "spectrum": "Cu I",
+        "suffix": "",
+        "uncertainty_ev": "0.000004"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 20.29239,
+        "prefix": "",
+        "references": "L869,L19804",
+        "spectrum": "Cu II",
+        "suffix": "",
+        "uncertainty_ev": "0.00006"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 36.841,
+        "prefix": "",
+        "references": "L10559,L2987",
+        "spectrum": "Cu III",
+        "suffix": "",
+        "uncertainty_ev": "0.012"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 57.38,
+        "prefix": "[",
+        "references": "L10559,L5144",
+        "spectrum": "Cu IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.05"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 152,
+      "excluded_at_or_above_threshold": 208,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Cu_I_levels.tsv",
+      "file_sha256": "sha256:94fb450d3dc3b4b932e4b3188c2d046f29a6f2e11daced94997d54fb27043b05",
+      "ionization_cutoff_ev": 7.72638,
+      "parsed_levels": 360,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Cu+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 365,
+      "response_sha256": "sha256:0a4f4ad0e0e4223e189b9978bc79ab9d4d42ffc61323deb8e08cf37fd285d8cc",
+      "retrieved_at_utc": "2026-09-22T18:09:46+00:00",
+      "spectrum": "Cu I"
+    },
+    "1": {
+      "bound_levels_written": 467,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Cu_II_levels.tsv",
+      "file_sha256": "sha256:52e0ad034e345e5b6a677824970d3ef0355a5a7b2ff8c766e534b84db4a1e293",
+      "ionization_cutoff_ev": 20.29239,
+      "parsed_levels": 467,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Cu+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 468,
+      "response_sha256": "sha256:46310e17d35e456c96a89c59d1bfa61ad5c0a44649eaba1c1e5d53d8f89dd3c9",
+      "retrieved_at_utc": "2026-09-22T18:09:47+00:00",
+      "spectrum": "Cu II"
+    },
+    "2": {
+      "bound_levels_written": 389,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Cu_III_levels.tsv",
+      "file_sha256": "sha256:891aa48c2a1c39763123cb5276ba42b1348bbf7680692205a011218bb6565699",
+      "ionization_cutoff_ev": 36.841,
+      "parsed_levels": 389,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Cu+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 390,
+      "response_sha256": "sha256:5cdf1039b721c5d1566fb3076816fa4b313c3fd8001c2e97a98feb57be6cb9ae",
+      "retrieved_at_utc": "2026-09-22T18:09:48+00:00",
+      "spectrum": "Cu III"
+    },
+    "3": {
+      "bound_levels_written": 297,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Cu_IV_levels.tsv",
+      "file_sha256": "sha256:da31aa78df35232d27b0e78b2216bbf2fa1544e1fb07007267a865590ddf38bc",
+      "ionization_cutoff_ev": 57.38,
+      "parsed_levels": 297,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Cu+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 298,
+      "response_sha256": "sha256:007d13e35922b7add9a801240cacf7437348670ee4cfde1f2660de4ddc836a59",
+      "retrieved_at_utc": "2026-09-22T18:09:49+00:00",
+      "spectrum": "Cu IV"
+    }
+  },
   "nist_asd_doi": "10.18434/T4W30F",
-  "files": {
-    "CuIEnergyC.txt": "sha256:5b4d3399720ec9415dcac01199f3abe903f1a6471724816e33446c9363406541",
-    "CuIIEnergyC.txt": "sha256:0368272166803c3f038eab542652c59178b564198c2279f3b1e8a2193a7badf3",
-    "CuIIIEnergyC.txt": "sha256:0177cfe3654fe2b17e51761bc88eb0bd1c2e226745e29f92df7fd051725aede9",
-    "CuIVEnergyC.txt": "sha256:a41130676b64c6545bb1c772b2308b918f9cffae0033685e834500af1ccf40ab",
-    "MT_01_01": "sha256:bd9190391de1de5d1922adfe8a4fe15bdeadf372052ab16da49a292ac748782"
-  }
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:b6882dfd55cdd4ab5894c885c72a16a9a9eecbc9c502d1e2a41e4797138e5813",
+  "symbol": "Cu"
 }

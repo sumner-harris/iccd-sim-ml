@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:33+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:e78cac960420eb078de9923596c9ba5291b44acb339317db40aca9b1d6bac9ef",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Rb&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:f77d0e3c50724fe1c1cd171344265f66d9c24815d651d5e8af08a3cf53f58203",
+    "retrieved_at_utc": "2026-09-22T18:10:31+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 4.1771281,
+        "prefix": "",
+        "references": "L4740,L5783",
+        "spectrum": "Rb I",
+        "suffix": "",
+        "uncertainty_ev": "0.0000012"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 27.28954,
+        "prefix": "",
+        "references": "L2590",
+        "spectrum": "Rb II",
+        "suffix": "",
+        "uncertainty_ev": "0.00006"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 39.247,
+        "prefix": "[",
+        "references": "L4311",
+        "spectrum": "Rb III",
+        "suffix": "]",
+        "uncertainty_ev": "0.003"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 52.2,
+        "prefix": "[",
+        "references": "L9039,L6470",
+        "spectrum": "Rb IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.25"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 231,
+      "excluded_at_or_above_threshold": 8,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Rb_I_levels.tsv",
+      "file_sha256": "sha256:b99ba2b7dafba168a237ada61e0ab1f1e742c29a381a42c198d40f798293f7a3",
+      "ionization_cutoff_ev": 4.1771281,
+      "parsed_levels": 239,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Rb+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 240,
+      "response_sha256": "sha256:9778a08a5973eda75bdad68ea92a01cf2ccf54b25c543a0bd1226280ac36f071",
+      "retrieved_at_utc": "2026-09-22T18:10:31+00:00",
+      "spectrum": "Rb I"
+    },
+    "1": {
+      "bound_levels_written": 165,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Rb_II_levels.tsv",
+      "file_sha256": "sha256:8425f8fafc9b63a10803c0fd57a10387557c34909c19df06f412fa9e02a04c6a",
+      "ionization_cutoff_ev": 27.28954,
+      "parsed_levels": 165,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Rb+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 166,
+      "response_sha256": "sha256:606da432e620f5815c93035d6a7c13a3424c391aab47307e1023e60c9bb0d9fc",
+      "retrieved_at_utc": "2026-09-22T18:10:32+00:00",
+      "spectrum": "Rb II"
+    },
+    "2": {
+      "bound_levels_written": 91,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Rb_III_levels.tsv",
+      "file_sha256": "sha256:af758a4f7e0f41685ec4437b5a908d049b0b20c21560d2bd96ac46f8c2a109f0",
+      "ionization_cutoff_ev": 39.247,
+      "parsed_levels": 91,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Rb+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 92,
+      "response_sha256": "sha256:5f988b3c9165c63480bbe3b434e77fabcff1b9eaaeaae6a81c45d1f1411cf83f",
+      "retrieved_at_utc": "2026-09-22T18:10:33+00:00",
+      "spectrum": "Rb III"
+    },
+    "3": {
+      "bound_levels_written": 130,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Rb_IV_levels.tsv",
+      "file_sha256": "sha256:82ee4622a19204112d2c833b6ea90894c2811d6deea0b411f7fd547a08316d80",
+      "ionization_cutoff_ev": 52.2,
+      "parsed_levels": 130,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Rb+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 131,
+      "response_sha256": "sha256:5d631a538fb0d13ce77e3cbdaf2527d5f9b57cb269a8fcd7429f6ea4ebeded86",
+      "retrieved_at_utc": "2026-09-22T18:10:33+00:00",
+      "spectrum": "Rb IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:58649ae868314d3e67080e4d8b7b8f44e5571f81f81c717faa90a2cfd9489be1",
+  "symbol": "Rb"
+}

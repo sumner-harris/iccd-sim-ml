@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:11:20+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:63cd65270279197b21b5ecd999472ac89e70c2f6a1ad5ceff2b9ee8e11e0d2aa",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Zr&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:d3b848abfacbfc49925eecf6dd92d0bac26ac6ec6ab514ebecb491e89dd209fb",
+    "retrieved_at_utc": "2026-09-22T18:11:17+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 6.634126,
+        "prefix": "",
+        "references": "L21107",
+        "spectrum": "Zr I",
+        "suffix": "",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 1,
+        "energy_ev": 13.13,
+        "prefix": "",
+        "references": "L272",
+        "spectrum": "Zr II",
+        "suffix": "",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 2,
+        "energy_ev": 23.17,
+        "prefix": "[",
+        "references": "L9267",
+        "spectrum": "Zr III",
+        "suffix": "]",
+        "uncertainty_ev": ""
+      },
+      {
+        "charge": 3,
+        "energy_ev": 34.41836,
+        "prefix": "",
+        "references": "L11645",
+        "spectrum": "Zr IV",
+        "suffix": "",
+        "uncertainty_ev": ""
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 258,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Zr_I_levels.tsv",
+      "file_sha256": "sha256:11712a71947478b3678e9e5e66b7798bbeb9cc6dd270af990e9dc4a20c837201",
+      "ionization_cutoff_ev": 6.634126,
+      "parsed_levels": 258,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Zr+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 259,
+      "response_sha256": "sha256:e5f273ee56b80f8ba51a15b9502732e558813cdd5b1fc54c0e3f0202135b84d4",
+      "retrieved_at_utc": "2026-09-22T18:11:18+00:00",
+      "spectrum": "Zr I"
+    },
+    "1": {
+      "bound_levels_written": 135,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Zr_II_levels.tsv",
+      "file_sha256": "sha256:deec9c6c388c85accfda0520846733b79d70bf9a45431959cc62a708fb64a239",
+      "ionization_cutoff_ev": 13.13,
+      "parsed_levels": 135,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Zr+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 136,
+      "response_sha256": "sha256:b22b3a84ed9bd4753cec40d59f10c574a87b506cc93587440dcd6ea812b2412c",
+      "retrieved_at_utc": "2026-09-22T18:11:19+00:00",
+      "spectrum": "Zr II"
+    },
+    "2": {
+      "bound_levels_written": 139,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Zr_III_levels.tsv",
+      "file_sha256": "sha256:ba067e36491ecc2813ab47099db4498b841146e7d633bce2b33b676aa9b7847d",
+      "ionization_cutoff_ev": 23.17,
+      "parsed_levels": 139,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Zr+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 140,
+      "response_sha256": "sha256:ceb1b80545cad0d8f7aa649daa4e672629c3d7b1e7cfeedb9df7534bd3ef189e",
+      "retrieved_at_utc": "2026-09-22T18:11:19+00:00",
+      "spectrum": "Zr III"
+    },
+    "3": {
+      "bound_levels_written": 34,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Zr_IV_levels.tsv",
+      "file_sha256": "sha256:5db86907d955f6d887e3f26d3d80a83fc7207fdba8957c847fe80c671c629d2f",
+      "ionization_cutoff_ev": 34.41836,
+      "parsed_levels": 34,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Zr+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 35,
+      "response_sha256": "sha256:71760055695354f19420f12f97443bc65fb215f493db727f78d1e9ad12c04e5e",
+      "retrieved_at_utc": "2026-09-22T18:11:20+00:00",
+      "spectrum": "Zr IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:3004652db9bcdcd51f06e4f7d96ac5b250f1fdf001e859da398d99e2e11a48e0",
+  "symbol": "Zr"
+}

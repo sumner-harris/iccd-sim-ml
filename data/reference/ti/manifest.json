@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:11:03+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:94c140cf120886e637149834d4ff181d4ab2f1f919d2354971f7f9cbd1ad2e4b",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ti&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:67e160985dc4294ba34d74871f0950868c94197ed18d6ca860f0e83e72a39349",
+    "retrieved_at_utc": "2026-09-22T18:10:59+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 6.82812,
+        "prefix": "",
+        "references": "L17996",
+        "spectrum": "Ti I",
+        "suffix": "",
+        "uncertainty_ev": "0.000012"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 13.5755,
+        "prefix": "",
+        "references": "L7185,L5432",
+        "spectrum": "Ti II",
+        "suffix": "",
+        "uncertainty_ev": "0.0025"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 27.49171,
+        "prefix": "",
+        "references": "L7185,L3593",
+        "spectrum": "Ti III",
+        "suffix": "",
+        "uncertainty_ev": "0.00025"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 43.26717,
+        "prefix": "",
+        "references": "L7185,L2753",
+        "spectrum": "Ti IV",
+        "suffix": "",
+        "uncertainty_ev": "0.00019"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 558,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ti_I_levels.tsv",
+      "file_sha256": "sha256:47cad65b487f35ceb704550755f0fa09b26af053891ada1e6b6ca08b2431f9e5",
+      "ionization_cutoff_ev": 6.82812,
+      "parsed_levels": 558,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ti+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 559,
+      "response_sha256": "sha256:88f294100a9ef2fac060ab5d1f9ea5322f302c8c8ed002cb365a426a1c3598d1",
+      "retrieved_at_utc": "2026-09-22T18:10:59+00:00",
+      "spectrum": "Ti I"
+    },
+    "1": {
+      "bound_levels_written": 252,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ti_II_levels.tsv",
+      "file_sha256": "sha256:dacdf2ff24dfc61758aaeb296732a6ebd2fd57bc9467f02ddb86f8960e3d348c",
+      "ionization_cutoff_ev": 13.5755,
+      "parsed_levels": 252,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ti+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 253,
+      "response_sha256": "sha256:5a2d966517cab96879d8b3a10da696b36aafe375b09ee7ae06511d120324efbd",
+      "retrieved_at_utc": "2026-09-22T18:11:01+00:00",
+      "spectrum": "Ti II"
+    },
+    "2": {
+      "bound_levels_written": 199,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ti_III_levels.tsv",
+      "file_sha256": "sha256:842a17b607b4c6bd1579e997c57d36b7cb3c72b17e8b1a36d7954954f90fc032",
+      "ionization_cutoff_ev": 27.49171,
+      "parsed_levels": 199,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ti+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 200,
+      "response_sha256": "sha256:437ff5addd1f6522accc4a74cdb54d4acbef6786dcdee4471e064d5c135c08cb",
+      "retrieved_at_utc": "2026-09-22T18:11:01+00:00",
+      "spectrum": "Ti III"
+    },
+    "3": {
+      "bound_levels_written": 39,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ti_IV_levels.tsv",
+      "file_sha256": "sha256:b1fdf3186815047c9e9a7913c89891d60f18eadf7b4ead06beeb8fc0f9ae51a1",
+      "ionization_cutoff_ev": 43.26717,
+      "parsed_levels": 39,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ti+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 40,
+      "response_sha256": "sha256:831633ecc91a08902aafbbeeb8f9c23536a2209c279450c19964250ce7d40e68",
+      "retrieved_at_utc": "2026-09-22T18:11:02+00:00",
+      "spectrum": "Ti IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:80d43681bf710bbff838a509ee3ffa021d53f26f4e2830b5f3bccaf6e618f3cd",
+  "symbol": "Ti"
+}

@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:45+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:dee22b223696adc6148d43d7b400d7417c0e8ad80465f29e8e995a290b4d85fe",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Si&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:5d26c937a66b917ac283f9a48449889f04908d33ced6227315ec1b402cdb7cae",
+    "retrieved_at_utc": "2026-09-22T18:10:42+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 8.15168,
+        "prefix": "",
+        "references": "L5815",
+        "spectrum": "Si I",
+        "suffix": "",
+        "uncertainty_ev": "0.00003"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 16.34585,
+        "prefix": "",
+        "references": "L5815",
+        "spectrum": "Si II",
+        "suffix": "",
+        "uncertainty_ev": "0.00004"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 33.493,
+        "prefix": "",
+        "references": "L5815",
+        "spectrum": "Si III",
+        "suffix": "",
+        "uncertainty_ev": "0.00009"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 45.14179,
+        "prefix": "",
+        "references": "L5815,L6098",
+        "spectrum": "Si IV",
+        "suffix": "",
+        "uncertainty_ev": "0.00007"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 452,
+      "excluded_at_or_above_threshold": 88,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Si_I_levels.tsv",
+      "file_sha256": "sha256:efed2c6e794ff4009f65ff28be3ed71ee3c5d432393c6ebe75c64c36a2c630fd",
+      "ionization_cutoff_ev": 8.15168,
+      "parsed_levels": 540,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Si+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 542,
+      "response_sha256": "sha256:98bd73ce055ec42d2321fced41adddda5226cdbccaff79cd902c400896108b12",
+      "retrieved_at_utc": "2026-09-22T18:10:43+00:00",
+      "spectrum": "Si I"
+    },
+    "1": {
+      "bound_levels_written": 95,
+      "excluded_at_or_above_threshold": 51,
+      "excluded_nonabsolute_levels": 2,
+      "file": "Si_II_levels.tsv",
+      "file_sha256": "sha256:e8a370e2c34fb19767765f3ccfee8953bd9c28343ca45bf7fb9210d49392e32a",
+      "ionization_cutoff_ev": 16.34585,
+      "parsed_levels": 148,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Si+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 150,
+      "response_sha256": "sha256:fb0e5f9d346cd5fbf6526292c6fe98aa10445f1bba81662265873c119b9c0e9a",
+      "retrieved_at_utc": "2026-09-22T18:10:44+00:00",
+      "spectrum": "Si II"
+    },
+    "2": {
+      "bound_levels_written": 175,
+      "excluded_at_or_above_threshold": 6,
+      "excluded_nonabsolute_levels": 3,
+      "file": "Si_III_levels.tsv",
+      "file_sha256": "sha256:a7b7de5def984cc194055c191a68e1a4844cfd052c9af4219d08c577d8cebc7c",
+      "ionization_cutoff_ev": 33.493,
+      "parsed_levels": 184,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Si+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 187,
+      "response_sha256": "sha256:c757f999fe6477e708f2a1453af30b666d86b135ec71b50000a274aee5c48497",
+      "retrieved_at_utc": "2026-09-22T18:10:44+00:00",
+      "spectrum": "Si III"
+    },
+    "3": {
+      "bound_levels_written": 54,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Si_IV_levels.tsv",
+      "file_sha256": "sha256:ad71f3136e0f31012b15ee1649c5cc12fe2bfe4957ebc5207585967eea970c56",
+      "ionization_cutoff_ev": 45.14179,
+      "parsed_levels": 54,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Si+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 55,
+      "response_sha256": "sha256:d8f1bc89c3c5f6972add883aeb209dde64115c263e0c3260a2835bfc73418f7c",
+      "retrieved_at_utc": "2026-09-22T18:10:45+00:00",
+      "spectrum": "Si IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:f1b1e723016643dd3ec315e53c62c0441621a3df95d14f4c0ff072caf9bea09b",
+  "symbol": "Si"
+}

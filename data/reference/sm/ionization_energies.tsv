@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Sm I	0	5.643722			0.000021	L21624
+Sm II	1	11.078	[	]	0.020	L19870c180
+Sm III	2	23.55	[	]	0.08	L19883c180
+Sm IV	3	41.64	[	]	0.11	L19883c180

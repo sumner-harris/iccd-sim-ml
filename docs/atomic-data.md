@@ -25,16 +25,18 @@ wavelength, but the underlying `Q` is fixed and element independent.
 
 ## Catalog and target set
 
-`data/reference/catalog.json` records the 35 elements represented by current
-HDF5 filenames plus planned C and As:
+`data/reference/catalog.json` records the 36 elements represented by current
+HDF5 filenames plus planned As:
 
 ```text
 Al As B Be Bi C Ca Co Cs Cu Fe Ge Ho In Mg Mo Na Nb Ni P Pr Pt Rb Sb
 Sc Se Si Sm Sr Ta Te Ti Tm V W Zn Zr
 ```
 
-The software is element-agnostic, but only Cu currently has a complete atomic
-bundle. Inspect the machine-readable status with:
+All 37 elements now have local NIST ASD bundles containing levels for stages
+I--IV and ionization energies for charges 0--3. There are 148 bound-level
+tables containing 28,041 canonical levels after loader deduplication. Inspect
+the machine-readable status with:
 
 ```bash
 iccd-sim atomic-status --atomic-reference data/reference
@@ -43,6 +45,46 @@ iccd-sim atomic-status --atomic-reference data/reference
 Each row reports strict readiness, usable photoionization charge states, the
 electron-neutral model, missing components, warnings, and an overall fidelity
 label.
+
+## Rebuilding the NIST database
+
+The database is reproducibly generated from the live NIST ASD HTML energy-level
+tables and CSV ionization-energy results:
+
+```bash
+python scripts/build_nist_level_database.py
+```
+
+The builder defaults to `target_elements` in `data/reference/catalog.json`.
+For a targeted update, pass explicit symbols:
+
+```bash
+python scripts/build_nist_level_database.py --elements Cu Fe Al
+```
+
+For every element it:
+
+1. retrieves NIST ionization energies;
+2. retrieves and parses the formatted HTML levels table for stages I--IV;
+3. keeps levels with an absolute numeric energy satisfying
+   `0 <= E_level < E_ionization` for that stage;
+4. writes normalized tab-delimited tables and a `species.json`; and
+5. records exact query URLs, retrieval times, ASD version, raw-response
+   SHA-256 values, normalized-file SHA-256 values, row counts, and exclusions
+   in `manifest.json`.
+
+The bound-state cutoff is important. For example, the current NIST Cu I page
+contains 360 parseable levels, but only 152 are below the 7.72638 eV Cu I
+ionization threshold. Including the higher autoionizing states in an LTE bound
+partition function would be physically inconsistent.
+
+“Strict ready” means that the required adjacent level tables and thresholds
+are present; it does not assert that NIST has equally complete experimental
+coverage for every ion. Coverage is uneven. In this snapshot Pt III and Ta
+III/IV contain only a ground level, and Tm IV contains seven bound levels.
+Their partition functions are therefore lower-information approximations.
+Per-stage counts are recorded in the manifests and catalog provenance so this
+limitation remains auditable.
 
 ## Per-element bundle contract
 
@@ -55,19 +97,20 @@ this structure:
   "schema_version": 1,
   "symbol": "X",
   "level_files": {
-    "0": "X_I_levels.txt",
-    "1": "X_II_levels.txt",
-    "2": "X_III_levels.txt",
-    "3": "X_IV_levels.txt"
+    "0": "X_I_levels.tsv",
+    "1": "X_II_levels.tsv",
+    "2": "X_III_levels.tsv",
+    "3": "X_IV_levels.tsv"
   },
   "ionization_energy_ev_by_charge": {
     "0": 1.0,
     "1": 2.0,
-    "2": 3.0
+    "2": 3.0,
+    "3": 4.0
   },
   "provenance": {
-    "level_source": "citation and export settings",
-    "ionization_source": "citation and database version"
+    "nist_asd_doi": "10.18434/T4W30F",
+    "manifest": "manifest.json"
   }
 }
 ```
@@ -77,7 +120,9 @@ files contain `g energy_eV`; tab-delimited NIST level exports with `g` and
 `Level (eV)` columns are also accepted.
 
 For `n0`, `n1`, and `n2` all to contribute to photoionization, levels are
-needed for charges 0--3 and thresholds for charges 0--2. A partial adjacent
+needed for charges 0--3 and thresholds for charges 0--2. The generated bundles
+also retain the charge-3 threshold because it defines the bound-state cutoff
+for the stage-IV table. A partial adjacent
 pair can be inspected or used in approximate mode, but only its corresponding
 density contributes and the limitation is reported. Strict mode requires all
 three contributing charge states.
@@ -88,12 +133,12 @@ guaranteed complete enough for partition functions. Dedicated NIST level
 exports are preferred. Ionization energies must remain an explicit cited
 registry rather than being inferred from the largest line energy.
 
-Authoritative inputs should be exported from the
+Authoritative inputs are retrieved from the
 [NIST ASD energy-level form](https://physics.nist.gov/PhysRefData/ASD/levels_form.html)
 and
 [NIST ASD ionization-energy form](https://physics.nist.gov/PhysRefData/ASD/ionEnergy.html),
-with the database version, query settings, retrieval date, and source DOI
-`10.18434/T4W30F` recorded in each descriptor.
+with the database version, query settings, retrieval date, response checksum,
+and source DOI `10.18434/T4W30F` recorded in each manifest.
 
 ## Strict versus approximate execution
 

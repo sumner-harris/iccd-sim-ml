@@ -1,19 +1,25 @@
 {
-  "schema_version": 1,
-  "symbol": "Cu",
-  "level_files": {
-    "0": "CuIEnergyC.txt",
-    "1": "CuIIEnergyC.txt",
-    "2": "CuIIIEnergyC.txt",
-    "3": "CuIVEnergyC.txt"
-  },
   "ionization_energy_ev_by_charge": {
     "0": 7.72638,
     "1": 20.29239,
-    "2": 36.841
+    "2": 36.841,
+    "3": 57.38
+  },
+  "level_files": {
+    "0": "Cu_I_levels.tsv",
+    "1": "Cu_II_levels.tsv",
+    "2": "Cu_III_levels.tsv",
+    "3": "Cu_IV_levels.tsv"
   },
   "provenance": {
-    "description": "User-supplied Cu I-IV level tables; electron-neutral opacity uses the catalog-wide fixed Q",
-    "nist_asd_doi": "10.18434/T4W30F"
-  }
+    "description": "Bound atomic energy levels and ionization thresholds retrieved from the live NIST Atomic Spectra Database",
+    "level_filter": "absolute numeric levels with 0 <= E < same-stage ionization energy",
+    "manifest": "manifest.json",
+    "nist_asd_doi": "10.18434/T4W30F",
+    "nist_asd_versions": [
+      "5.12"
+    ]
+  },
+  "schema_version": 1,
+  "symbol": "Cu"
 }

@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ni I	0	7.639878			0.000017	L12369
+Ni II	1	18.168838			0.000025	L7185,L897
+Ni III	2	35.187			0.019	L11049
+Ni IV	3	54.92	[	]	0.25	L7185,L241

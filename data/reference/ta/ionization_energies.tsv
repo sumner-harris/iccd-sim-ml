@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ta I	0	7.549571			0.000025	L13153
+Ta II	1	16.2	[	]	0.5	L16139
+Ta III	2	23.1	(	)	1.6	L8672c99
+Ta IV	3	35.0	(	)	1.7	L8672c99

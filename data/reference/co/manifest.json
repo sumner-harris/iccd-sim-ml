@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:09:42+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:4040831257d337fe37dcd236ca4c77b5a97e061b5728eb93c4cc05f3bce4729b",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Co&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:0e35b6346132e44b9a814bf92799db5c797edc67909709efce2df07b947c58ba",
+    "retrieved_at_utc": "2026-09-22T18:09:38+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.88101,
+        "prefix": "",
+        "references": "L10545",
+        "spectrum": "Co I",
+        "suffix": "",
+        "uncertainty_ev": "0.00012"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 17.0844,
+        "prefix": "",
+        "references": "L7185,L2115",
+        "spectrum": "Co II",
+        "suffix": "",
+        "uncertainty_ev": "0.0012"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 33.5,
+        "prefix": "[",
+        "references": "L7185,L17500",
+        "spectrum": "Co III",
+        "suffix": "]",
+        "uncertainty_ev": "0.06"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 51.27,
+        "prefix": "[",
+        "references": "L7185,L241",
+        "spectrum": "Co IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.10"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 329,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Co_I_levels.tsv",
+      "file_sha256": "sha256:53b3a4c97aba8ddcef47142af3373ef831033b3cae60eeffb0e34619e7b1d62e",
+      "ionization_cutoff_ev": 7.88101,
+      "parsed_levels": 329,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Co+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 330,
+      "response_sha256": "sha256:6cad28da925046e2c4ca192da251f79be9993983476df0d3d74208ac5b2f62cb",
+      "retrieved_at_utc": "2026-09-22T18:09:39+00:00",
+      "spectrum": "Co I"
+    },
+    "1": {
+      "bound_levels_written": 480,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Co_II_levels.tsv",
+      "file_sha256": "sha256:ad58abab5a4468592e8613ce041b96c6e23c595b303112d38ea761e03e95fa79",
+      "ionization_cutoff_ev": 17.0844,
+      "parsed_levels": 480,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Co+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 481,
+      "response_sha256": "sha256:52557d159eac33e8849afd546622ae2a89dec6d37182b7019dc7bd8398f368fe",
+      "retrieved_at_utc": "2026-09-22T18:09:40+00:00",
+      "spectrum": "Co II"
+    },
+    "2": {
+      "bound_levels_written": 287,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Co_III_levels.tsv",
+      "file_sha256": "sha256:d66980dc938175a214b50bef0ddb215dbed9a036a64e3c398b07bfa2a8a5cb12",
+      "ionization_cutoff_ev": 33.5,
+      "parsed_levels": 287,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Co+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 288,
+      "response_sha256": "sha256:9e86cc403f52e4514f1981bbf8cdb8077c52ab7da092b14b618411b1130b1083",
+      "retrieved_at_utc": "2026-09-22T18:09:41+00:00",
+      "spectrum": "Co III"
+    },
+    "3": {
+      "bound_levels_written": 296,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Co_IV_levels.tsv",
+      "file_sha256": "sha256:c795062af8d14995d6c5655c7d4380beac7e584242b1c32e2e320764970422de",
+      "ionization_cutoff_ev": 51.27,
+      "parsed_levels": 296,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Co+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 297,
+      "response_sha256": "sha256:8aaf4f7df0441a1ec0c27b6747ffeeb9c21e5841659f2c666e8d27f22a85ca76",
+      "retrieved_at_utc": "2026-09-22T18:09:42+00:00",
+      "spectrum": "Co IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:8e3b21a599386e063ea64e81df27c5b2aed2a63655c45dcf7d81946ab7e5f163",
+  "symbol": "Co"
+}

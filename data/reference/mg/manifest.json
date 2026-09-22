@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:06+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:cc948818765211253232c1824ef3dd3bf11c2536a8f37a7dd6c9b3107aa5eac6",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Mg&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:0cbc38308e738e3fa0cce21f10122fa35d4710ff38f0a765f4046bc41f415eae",
+    "retrieved_at_utc": "2026-09-22T18:10:03+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.646236,
+        "prefix": "",
+        "references": "L10635,L6969",
+        "spectrum": "Mg I",
+        "suffix": "",
+        "uncertainty_ev": "0.000004"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 15.035271,
+        "prefix": "",
+        "references": "L10635",
+        "spectrum": "Mg II",
+        "suffix": "",
+        "uncertainty_ev": "0.000006"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 80.1436,
+        "prefix": "",
+        "references": "L4995,L1434",
+        "spectrum": "Mg III",
+        "suffix": "",
+        "uncertainty_ev": "0.0006"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 109.2654,
+        "prefix": "[",
+        "references": "L4995,L2720",
+        "spectrum": "Mg IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.0012"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 222,
+      "excluded_at_or_above_threshold": 84,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mg_I_levels.tsv",
+      "file_sha256": "sha256:839e3e396a8eca05954ff82d63206ad63e6e5516e3fdaee88ba8daee583b7192",
+      "ionization_cutoff_ev": 7.646236,
+      "parsed_levels": 306,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mg+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 323,
+      "response_sha256": "sha256:9a4ed822dfe657b8db9612887e9bf5e6a32f7469bc169d27c5ea2aef936a0d30",
+      "retrieved_at_utc": "2026-09-22T18:10:04+00:00",
+      "spectrum": "Mg I"
+    },
+    "1": {
+      "bound_levels_written": 82,
+      "excluded_at_or_above_threshold": 55,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mg_II_levels.tsv",
+      "file_sha256": "sha256:3ac1511f9d38ddc9652cc56720120c244adff1efe559a4e08eb591576ed433d2",
+      "ionization_cutoff_ev": 15.035271,
+      "parsed_levels": 137,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mg+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 149,
+      "response_sha256": "sha256:b25bd3b79d6ad2f3dafbac94f3cac8ac1db1f72d7b7392dd5e9e02ebf390e408",
+      "retrieved_at_utc": "2026-09-22T18:10:05+00:00",
+      "spectrum": "Mg II"
+    },
+    "2": {
+      "bound_levels_written": 105,
+      "excluded_at_or_above_threshold": 6,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mg_III_levels.tsv",
+      "file_sha256": "sha256:2c43f74b22efdfb6570ba0225f6209e6a724b5e67fb88dec57806a5a4066c4ea",
+      "ionization_cutoff_ev": 80.1436,
+      "parsed_levels": 111,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mg+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 114,
+      "response_sha256": "sha256:6af6e9b704a851529c9d5783a138dc2b5fd7df8cb281e46a324237f08c481988",
+      "retrieved_at_utc": "2026-09-22T18:10:05+00:00",
+      "spectrum": "Mg III"
+    },
+    "3": {
+      "bound_levels_written": 164,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mg_IV_levels.tsv",
+      "file_sha256": "sha256:9b7dd4154b58250e086b73fb0dbd636bace9b14e8204a0c9f4a275391282b975",
+      "ionization_cutoff_ev": 109.2654,
+      "parsed_levels": 164,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mg+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 169,
+      "response_sha256": "sha256:147ddac42d9bcb909dce6b28433b244b7e0b1b956e02ec9775497e3f4e277ea5",
+      "retrieved_at_utc": "2026-09-22T18:10:06+00:00",
+      "spectrum": "Mg IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:4c32c43a569875f09450f3e0ba6b14250b7350ae7b5684bf31b8ee6deb7503a9",
+  "symbol": "Mg"
+}

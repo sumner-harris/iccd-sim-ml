@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:56+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:f016b18d5ab02b5f5f6c067abe165efea433be01c7a35760533f593a36a92b82",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ta&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:99100505fb0524ac07bfac3dd49dd48ae3206927b29334fe59322ccde13b690e",
+    "retrieved_at_utc": "2026-09-22T18:10:53+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.549571,
+        "prefix": "",
+        "references": "L13153",
+        "spectrum": "Ta I",
+        "suffix": "",
+        "uncertainty_ev": "0.000025"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 16.2,
+        "prefix": "[",
+        "references": "L16139",
+        "spectrum": "Ta II",
+        "suffix": "]",
+        "uncertainty_ev": "0.5"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 23.1,
+        "prefix": "(",
+        "references": "L8672c99",
+        "spectrum": "Ta III",
+        "suffix": ")",
+        "uncertainty_ev": "1.6"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 35.0,
+        "prefix": "(",
+        "references": "L8672c99",
+        "spectrum": "Ta IV",
+        "suffix": ")",
+        "uncertainty_ev": "1.7"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 283,
+      "excluded_at_or_above_threshold": 3,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ta_I_levels.tsv",
+      "file_sha256": "sha256:60a710de103f9045dfa808295c66becf160463503f79c4176616a517b6649fa9",
+      "ionization_cutoff_ev": 7.549571,
+      "parsed_levels": 286,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ta+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 287,
+      "response_sha256": "sha256:11d4c50150d4d28516d1065c43f0a8538582d132177c29f5d92859436a36e982",
+      "retrieved_at_utc": "2026-09-22T18:10:53+00:00",
+      "spectrum": "Ta I"
+    },
+    "1": {
+      "bound_levels_written": 125,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ta_II_levels.tsv",
+      "file_sha256": "sha256:2aad8c11862c09e025c5980e3378008d237cd91c7c5f9d8a512530477d230701",
+      "ionization_cutoff_ev": 16.2,
+      "parsed_levels": 125,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ta+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 126,
+      "response_sha256": "sha256:afbbed3dc380bb36dc4f8e12e0f3666c4043f117feb5e0caa0eaf1592f654d4d",
+      "retrieved_at_utc": "2026-09-22T18:10:54+00:00",
+      "spectrum": "Ta II"
+    },
+    "2": {
+      "bound_levels_written": 1,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ta_III_levels.tsv",
+      "file_sha256": "sha256:824929f86273d29472c0b3dbce067024ade31fcdc1a9cadf6c2f7052a9524ab2",
+      "ionization_cutoff_ev": 23.1,
+      "parsed_levels": 1,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ta+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 2,
+      "response_sha256": "sha256:e46e495ad722d8df030ede1f99911f42d53349460d1a186f311882897ee940d7",
+      "retrieved_at_utc": "2026-09-22T18:10:55+00:00",
+      "spectrum": "Ta III"
+    },
+    "3": {
+      "bound_levels_written": 1,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ta_IV_levels.tsv",
+      "file_sha256": "sha256:3c798dd4ccf2eba8dae5e812345040f8b68e5682fd084710db96e809d34d00cc",
+      "ionization_cutoff_ev": 35.0,
+      "parsed_levels": 1,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ta+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 2,
+      "response_sha256": "sha256:8a8593ec0805700e9692ffe3d0298e5296762b3eeba527650220f456e80663b3",
+      "retrieved_at_utc": "2026-09-22T18:10:56+00:00",
+      "spectrum": "Ta IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:bae235003cb38083a8b4170bbfb7e12d1c6d19e5000a7e5244096c37ae9ba3c8",
+  "symbol": "Ta"
+}

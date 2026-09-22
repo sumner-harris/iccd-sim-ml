@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Sb I	0	8.608389				L8844,L6684
+Sb II	1	16.626				L16370,L8844
+Sb III	2	25.3235				L3466,L16241
+Sb IV	3	43.804				L11767

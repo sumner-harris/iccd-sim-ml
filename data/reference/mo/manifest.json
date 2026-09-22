@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:09+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:41d19b1609aedc10bf6f4e2193ba62814183212bb265f5c69b29d582ae5a0d56",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Mo&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:19fa4a181a66c8516072cbe31e14ae676602554cd0c0483528541060320f100c",
+    "retrieved_at_utc": "2026-09-22T18:10:06+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.09243,
+        "prefix": "",
+        "references": "L6829",
+        "spectrum": "Mo I",
+        "suffix": "",
+        "uncertainty_ev": "0.00004"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 16.16,
+        "prefix": "[",
+        "references": "L10502,L17501",
+        "spectrum": "Mo II",
+        "suffix": "]",
+        "uncertainty_ev": "0.12"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 27.13,
+        "prefix": "[",
+        "references": "L10502,L17276",
+        "spectrum": "Mo III",
+        "suffix": "]",
+        "uncertainty_ev": "0.12"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 40.33,
+        "prefix": "[",
+        "references": "L10804,L10371",
+        "spectrum": "Mo IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.06"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 414,
+      "excluded_at_or_above_threshold": 12,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mo_I_levels.tsv",
+      "file_sha256": "sha256:49bfe23d62720c56e6269f5cd9cb1af83f46f2bf440784119f96b60bb3d50e15",
+      "ionization_cutoff_ev": 7.09243,
+      "parsed_levels": 426,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mo+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 427,
+      "response_sha256": "sha256:265993f80b84e31ba14d96f88bbfec5948adac6d96e4b203e9926c974c5d56c2",
+      "retrieved_at_utc": "2026-09-22T18:10:07+00:00",
+      "spectrum": "Mo I"
+    },
+    "1": {
+      "bound_levels_written": 238,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mo_II_levels.tsv",
+      "file_sha256": "sha256:83cb470b25d7cda212e37131cbd1429709ddb62f3d3406422d5d6856c965034e",
+      "ionization_cutoff_ev": 16.16,
+      "parsed_levels": 238,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mo+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 239,
+      "response_sha256": "sha256:11db938b8a4719c5e67e8e67a988fff61f5a536d224df1d202c8a065a6dd54fd",
+      "retrieved_at_utc": "2026-09-22T18:10:08+00:00",
+      "spectrum": "Mo II"
+    },
+    "2": {
+      "bound_levels_written": 119,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mo_III_levels.tsv",
+      "file_sha256": "sha256:c20507acf19e90002b3089552a965411b2e6ed5995c6d8d1c19cba4b5c08de79",
+      "ionization_cutoff_ev": 27.13,
+      "parsed_levels": 119,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mo+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 120,
+      "response_sha256": "sha256:d1ee6d1125a291717949d8e56701787cf938253c6a49048abf28fed1406d2ca4",
+      "retrieved_at_utc": "2026-09-22T18:10:08+00:00",
+      "spectrum": "Mo III"
+    },
+    "3": {
+      "bound_levels_written": 80,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Mo_IV_levels.tsv",
+      "file_sha256": "sha256:758388da6bf8b09afd21128debd0aec097ce994d5ebf9994ad00dbabd06bfa0b",
+      "ionization_cutoff_ev": 40.33,
+      "parsed_levels": 80,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Mo+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 81,
+      "response_sha256": "sha256:49897f842699193cf2354f74792ec0d267a2b921c3a60e720481d1d4184e26e0",
+      "retrieved_at_utc": "2026-09-22T18:10:09+00:00",
+      "spectrum": "Mo IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:4f6f3865eeb428d879118d5d9b59d00a1d179535d2658f9d2caa3ab045ae65bc",
+  "symbol": "Mo"
+}

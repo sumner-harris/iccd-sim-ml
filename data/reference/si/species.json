@@ -1,0 +1,25 @@
+{
+  "ionization_energy_ev_by_charge": {
+    "0": 8.15168,
+    "1": 16.34585,
+    "2": 33.493,
+    "3": 45.14179
+  },
+  "level_files": {
+    "0": "Si_I_levels.tsv",
+    "1": "Si_II_levels.tsv",
+    "2": "Si_III_levels.tsv",
+    "3": "Si_IV_levels.tsv"
+  },
+  "provenance": {
+    "description": "Bound atomic energy levels and ionization thresholds retrieved from the live NIST Atomic Spectra Database",
+    "level_filter": "absolute numeric levels with 0 <= E < same-stage ionization energy",
+    "manifest": "manifest.json",
+    "nist_asd_doi": "10.18434/T4W30F",
+    "nist_asd_versions": [
+      "5.12"
+    ]
+  },
+  "schema_version": 1,
+  "symbol": "Si"
+}

@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Fe I	0	7.9024681			0.0000012	L7743c109
+Fe II	1	16.19921			0.00005	L18349
+Fe III	2	30.651			0.012	L7185,L1171
+Fe IV	3	54.91			0.04	L17209

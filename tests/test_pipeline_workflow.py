@@ -89,10 +89,10 @@ def test_proxy_cache_miss_then_hit(tmp_path: Path) -> None:
 
 
 def test_approximate_continuum_cache_is_time_aligned_and_reused(tmp_path: Path) -> None:
-    _tiny_h5(tmp_path / "Fe_0.h5", element="Fe")
+    _tiny_h5(tmp_path / "Xe_0.h5", element="Xe")
     samples = discover_balanced_subset(
         tmp_path,
-        elements=("Fe",),
+        elements=("Xe",),
         simulations_per_element=1,
         minimum_frames=2,
     )

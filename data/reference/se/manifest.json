@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:42+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:2bf2e628e821cb985b8a9b475f421cfc7fcb7cc3a3caae4403a2adf6db2f0425",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Se&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:80744d8d7e10327bda4cbaae0393ec9e26956d3c248a97c31fdbc0b02114157b",
+    "retrieved_at_utc": "2026-09-22T18:10:39+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 9.752368,
+        "prefix": "",
+        "references": "L21645",
+        "spectrum": "Se I",
+        "suffix": "",
+        "uncertainty_ev": "0.000006"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 21.196,
+        "prefix": "",
+        "references": "L17234c100",
+        "spectrum": "Se II",
+        "suffix": "",
+        "uncertainty_ev": "0.010"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 31.697,
+        "prefix": "",
+        "references": "L17867",
+        "spectrum": "Se III",
+        "suffix": "",
+        "uncertainty_ev": "0.019"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 42.947,
+        "prefix": "",
+        "references": "L925",
+        "spectrum": "Se IV",
+        "suffix": "",
+        "uncertainty_ev": "0.003"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 172,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Se_I_levels.tsv",
+      "file_sha256": "sha256:4ba811f859ce7e360dfa0a75ffbd3c1a4b116c1f61ad5f1e0ab1897ed828ca19",
+      "ionization_cutoff_ev": 9.752368,
+      "parsed_levels": 172,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Se+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 173,
+      "response_sha256": "sha256:7a728cc7597756bbf68ad64bb6f4c3c9e3c02bc9e5359072bcce7efe4080fd0c",
+      "retrieved_at_utc": "2026-09-22T18:10:40+00:00",
+      "spectrum": "Se I"
+    },
+    "1": {
+      "bound_levels_written": 77,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Se_II_levels.tsv",
+      "file_sha256": "sha256:796215350802b1039d84f0ce62ee29ced1f0aec4e409b0cea88af35cc8464412",
+      "ionization_cutoff_ev": 21.196,
+      "parsed_levels": 77,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Se+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 78,
+      "response_sha256": "sha256:5819c0f17165a4666409d65a759e53b37fa6fd8d6f811d5540e719960386d353",
+      "retrieved_at_utc": "2026-09-22T18:10:41+00:00",
+      "spectrum": "Se II"
+    },
+    "2": {
+      "bound_levels_written": 51,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 1,
+      "file": "Se_III_levels.tsv",
+      "file_sha256": "sha256:f89c99c61130709329ae6e7551fbcfa08ed5b1ae9892fe79f24b13f8757e3131",
+      "ionization_cutoff_ev": 31.697,
+      "parsed_levels": 52,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Se+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 53,
+      "response_sha256": "sha256:40b599d82e43b51af2f5d7c422bc6be557b73382427dc7db354312ba58d69be4",
+      "retrieved_at_utc": "2026-09-22T18:10:41+00:00",
+      "spectrum": "Se III"
+    },
+    "3": {
+      "bound_levels_written": 28,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Se_IV_levels.tsv",
+      "file_sha256": "sha256:233c7085158272bf4c1f51e4ff25d5379a4acd1164e545fc4f2f79402a425b2a",
+      "ionization_cutoff_ev": 42.947,
+      "parsed_levels": 28,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Se+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 29,
+      "response_sha256": "sha256:601bd61947c757a8732542339fd851756d9d90c13f40380333a9ced999161b28",
+      "retrieved_at_utc": "2026-09-22T18:10:42+00:00",
+      "spectrum": "Se IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:3a4438f9d85139e3c4c66f81ab2fa0d54105d4d5b31457d7016374a09bb833c9",
+  "symbol": "Se"
+}

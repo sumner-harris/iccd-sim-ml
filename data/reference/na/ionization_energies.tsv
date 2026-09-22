@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Na I	0	5.13907696			0.00000025	L10921,L9648
+Na II	1	47.28636			0.00025	L914
+Na III	2	71.62	[	]	0.0012	L5793,L2720
+Na IV	3	98.936	[	]	0.012	L11770

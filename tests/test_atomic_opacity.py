@@ -284,9 +284,9 @@ class AtomicCatalogTests(unittest.TestCase):
         root = Path(__file__).parents[1] / "data" / "reference"
         catalog = AtomicDataCatalog(root)
         with self.assertRaises(AtomicDataUnavailableError):
-            catalog.load("Fe", mode="strict")
-        reference = catalog.load("Fe", mode="approximate")
-        self.assertEqual(reference.species.symbol, "Fe")
+            catalog.load("Xe", mode="strict")
+        reference = catalog.load("Xe", mode="approximate")
+        self.assertEqual(reference.species.symbol, "Xe")
         self.assertEqual(reference.status.fidelity, "approximate_incomplete_continuum")
         self.assertEqual(
             reference.status.electron_neutral_model,
@@ -296,7 +296,7 @@ class AtomicCatalogTests(unittest.TestCase):
             "photoionization_charge_states:0,1,2",
             reference.status.missing_components,
         )
-        self.assertEqual(reference.build_opacity_model().species.symbol, "Fe")
+        self.assertEqual(reference.build_opacity_model().species.symbol, "Xe")
 
     def test_fixed_q_does_not_require_an_element_bundle_when_photoionization_is_off(self) -> None:
         root = Path(__file__).parents[1] / "data" / "reference"

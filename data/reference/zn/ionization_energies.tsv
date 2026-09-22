@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Zn I	0	9.394197			0.000006	L13951
+Zn II	1	17.96439			0.00025	L9171,L640
+Zn III	2	39.7233			0.00012	L9171,L65
+Zn IV	3	59.573			0.019	L9171,L6389

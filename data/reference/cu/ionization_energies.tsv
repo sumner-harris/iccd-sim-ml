@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Cu I	0	7.72638			0.000004	L14897
+Cu II	1	20.29239			0.00006	L869,L19804
+Cu III	2	36.841			0.012	L10559,L2987
+Cu IV	3	57.38	[	]	0.05	L10559,L5144

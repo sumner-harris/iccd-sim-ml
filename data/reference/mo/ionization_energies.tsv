@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Mo I	0	7.09243			0.00004	L6829
+Mo II	1	16.16	[	]	0.12	L10502,L17501
+Mo III	2	27.13	[	]	0.12	L10502,L17276
+Mo IV	3	40.33	[	]	0.06	L10804,L10371

@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:12+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:900f1a280bc23a6f99bc2ab9c74e885d4528048190bf8da6641670975a88ce95",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Na&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:094c034f91c6ee6966a736b9fbc3390eb340a3b7b30b78c5fe1cb1ab268468fe",
+    "retrieved_at_utc": "2026-09-22T18:10:09+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 5.13907696,
+        "prefix": "",
+        "references": "L10921,L9648",
+        "spectrum": "Na I",
+        "suffix": "",
+        "uncertainty_ev": "0.00000025"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 47.28636,
+        "prefix": "",
+        "references": "L914",
+        "spectrum": "Na II",
+        "suffix": "",
+        "uncertainty_ev": "0.00025"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 71.62,
+        "prefix": "[",
+        "references": "L5793,L2720",
+        "spectrum": "Na III",
+        "suffix": "]",
+        "uncertainty_ev": "0.0012"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 98.936,
+        "prefix": "[",
+        "references": "L11770",
+        "spectrum": "Na IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.012"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 139,
+      "excluded_at_or_above_threshold": 284,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Na_I_levels.tsv",
+      "file_sha256": "sha256:7690f59b166a2126e18c190ca67843e61f7dd38d7e9bab000f9ced24f24b3eaf",
+      "ionization_cutoff_ev": 5.13907696,
+      "parsed_levels": 423,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Na+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 430,
+      "response_sha256": "sha256:ee4e0d09ade1bfa4b1d236555dd960834619430fb43bdd9479f5f2f9b6ccd440",
+      "retrieved_at_utc": "2026-09-22T18:10:10+00:00",
+      "spectrum": "Na I"
+    },
+    "1": {
+      "bound_levels_written": 150,
+      "excluded_at_or_above_threshold": 12,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Na_II_levels.tsv",
+      "file_sha256": "sha256:0ffc952bcca75f92ed650f796f01e3a0d5f09f4bcb3334247410990ffd2d05be",
+      "ionization_cutoff_ev": 47.28636,
+      "parsed_levels": 162,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Na+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 165,
+      "response_sha256": "sha256:251c8d94115aceae2d4e52edc0edb56c8d02fd162f006b7bfd8fbbafaf8be5a9",
+      "retrieved_at_utc": "2026-09-22T18:10:11+00:00",
+      "spectrum": "Na II"
+    },
+    "2": {
+      "bound_levels_written": 114,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Na_III_levels.tsv",
+      "file_sha256": "sha256:2829149e9995b65706f9e7af2a9bda0f0ff2105063720d47140842d9334414ad",
+      "ionization_cutoff_ev": 71.62,
+      "parsed_levels": 114,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Na+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 119,
+      "response_sha256": "sha256:a83ab1e338b3bd60854ccc4d3bb210811e05641a1b58cc517933dea72a7416a2",
+      "retrieved_at_utc": "2026-09-22T18:10:11+00:00",
+      "spectrum": "Na III"
+    },
+    "3": {
+      "bound_levels_written": 90,
+      "excluded_at_or_above_threshold": 3,
+      "excluded_nonabsolute_levels": 9,
+      "file": "Na_IV_levels.tsv",
+      "file_sha256": "sha256:090793366396263e7125f2f0ce5352a06853c1c4a22a7f7e764c0b0860993979",
+      "ionization_cutoff_ev": 98.936,
+      "parsed_levels": 102,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Na+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 103,
+      "response_sha256": "sha256:bc98c9ec2c6c7f20119c1d8a1cb6d18cd2f8d8166a1d53b396136362abd956ba",
+      "retrieved_at_utc": "2026-09-22T18:10:12+00:00",
+      "spectrum": "Na IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:12750b45c431e9b68f9042a91ba4530c69b4b66b39b77e3c41057956aa83f2e0",
+  "symbol": "Na"
+}

@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ho I	0	6.0215			0.0006	L4277
+Ho II	1	11.781	[	]	0.020	L19870c180
+Ho III	2	22.79	[	]	0.03	L19883c180
+Ho IV	3	42.52	[	]	0.08	L19883c180

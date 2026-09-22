@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:21+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:82e484233664925d02b25450b9abe32ee0bab74a0221af4701b175859b9bc101",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ni&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:2f9eeff7c00472906006c2cd5cadb3a0ccc3c667f5670a6219fd7642f4ea3084",
+    "retrieved_at_utc": "2026-09-22T18:10:16+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.639878,
+        "prefix": "",
+        "references": "L12369",
+        "spectrum": "Ni I",
+        "suffix": "",
+        "uncertainty_ev": "0.000017"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 18.168838,
+        "prefix": "",
+        "references": "L7185,L897",
+        "spectrum": "Ni II",
+        "suffix": "",
+        "uncertainty_ev": "0.000025"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 35.187,
+        "prefix": "",
+        "references": "L11049",
+        "spectrum": "Ni III",
+        "suffix": "",
+        "uncertainty_ev": "0.019"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 54.92,
+        "prefix": "[",
+        "references": "L7185,L241",
+        "spectrum": "Ni IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.25"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 285,
+      "excluded_at_or_above_threshold": 2,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ni_I_levels.tsv",
+      "file_sha256": "sha256:76eeda1ba1485e57bc90f4d09249039b5e6c35347391f09b3b5d13bd0c02a8ce",
+      "ionization_cutoff_ev": 7.639878,
+      "parsed_levels": 287,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ni+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 288,
+      "response_sha256": "sha256:5bb6e396d2168b504bb723a55823ddc4f16cb34d3404c7555d86e5cc3d98cfd0",
+      "retrieved_at_utc": "2026-09-22T18:10:16+00:00",
+      "spectrum": "Ni I"
+    },
+    "1": {
+      "bound_levels_written": 718,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ni_II_levels.tsv",
+      "file_sha256": "sha256:e0d2d3190d4862d89b0931fc2d972a66826b6f6e0192a38fe50b4a04076ee762",
+      "ionization_cutoff_ev": 18.168838,
+      "parsed_levels": 718,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ni+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 719,
+      "response_sha256": "sha256:1a1cf36aca6ed0d05c75f03a4361b65ba6b0166ee80a2d096e097566eec27a21",
+      "retrieved_at_utc": "2026-09-22T18:10:18+00:00",
+      "spectrum": "Ni II"
+    },
+    "2": {
+      "bound_levels_written": 344,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ni_III_levels.tsv",
+      "file_sha256": "sha256:716349db5061a44902d09e318f432213ce2b6f03d5ab8be0e9a9b971d6527d5f",
+      "ionization_cutoff_ev": 35.187,
+      "parsed_levels": 344,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ni+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 345,
+      "response_sha256": "sha256:40226873ceefe950f4b9abbb5d4a6a1458c2a03204c1ccc527a35cea52c4cfad",
+      "retrieved_at_utc": "2026-09-22T18:10:20+00:00",
+      "spectrum": "Ni III"
+    },
+    "3": {
+      "bound_levels_written": 235,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ni_IV_levels.tsv",
+      "file_sha256": "sha256:a4423f13ccbb8b0b801a4abfba84e072bf832106fdc30d010789e0ef4b58c4e8",
+      "ionization_cutoff_ev": 54.92,
+      "parsed_levels": 235,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ni+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 236,
+      "response_sha256": "sha256:9e40c4e0579853192c8e41360238f33f767f293a4726c4d49d202bae3ea68508",
+      "retrieved_at_utc": "2026-09-22T18:10:20+00:00",
+      "spectrum": "Ni IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:aa122ad0b1a06b47e19c2d8d8532a7a462f0680153a17999e2651e67c9a17ed7",
+  "symbol": "Ni"
+}

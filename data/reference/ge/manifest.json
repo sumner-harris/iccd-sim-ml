@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:09:57+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:dc61f461d02dcee5b74d80cd01629ec61e9bacd1258ad1ae619ca819ecb9feb7",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ge&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:ed5db088a37d9efd7a4de611976a9077176f4e0db432eae2df5f072ab85c3579",
+    "retrieved_at_utc": "2026-09-22T18:09:54+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 7.899435,
+        "prefix": "",
+        "references": "L3935,L12369",
+        "spectrum": "Ge I",
+        "suffix": "",
+        "uncertainty_ev": "0.000012"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 15.93461,
+        "prefix": "",
+        "references": "L7213",
+        "spectrum": "Ge II",
+        "suffix": "",
+        "uncertainty_ev": "0.000025"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 34.0576,
+        "prefix": "",
+        "references": "L7213,L11268",
+        "spectrum": "Ge III",
+        "suffix": "",
+        "uncertainty_ev": "0.0012"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 45.7155,
+        "prefix": "",
+        "references": "L7213,L6924",
+        "spectrum": "Ge IV",
+        "suffix": "",
+        "uncertainty_ev": "0.0012"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 391,
+      "excluded_at_or_above_threshold": 228,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ge_I_levels.tsv",
+      "file_sha256": "sha256:47d63ab7d0e2f74cad3e49c94419debb31b265b4806550c225f98736178b1b75",
+      "ionization_cutoff_ev": 7.899435,
+      "parsed_levels": 619,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ge+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 621,
+      "response_sha256": "sha256:949127ea48bef7f4ca992107e4fee269aa8f027cab8ad66e1873be90c1a4e80b",
+      "retrieved_at_utc": "2026-09-22T18:09:54+00:00",
+      "spectrum": "Ge I"
+    },
+    "1": {
+      "bound_levels_written": 80,
+      "excluded_at_or_above_threshold": 47,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ge_II_levels.tsv",
+      "file_sha256": "sha256:e410c9aa931c9dad8c97df552655ff45a4ab74ffacfbb76d529a6202a0cd49f9",
+      "ionization_cutoff_ev": 15.93461,
+      "parsed_levels": 127,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ge+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 129,
+      "response_sha256": "sha256:893f31eb65fe0875bf42bffed232d4105282643116aedd06eac3c460ab724046",
+      "retrieved_at_utc": "2026-09-22T18:09:55+00:00",
+      "spectrum": "Ge II"
+    },
+    "2": {
+      "bound_levels_written": 47,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ge_III_levels.tsv",
+      "file_sha256": "sha256:4579eda8aa16548d7ff5d6e244086af4b349be144d1f15b329b3de32261fc631",
+      "ionization_cutoff_ev": 34.0576,
+      "parsed_levels": 47,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ge+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 48,
+      "response_sha256": "sha256:65cddd6a47b008ca38a58b5232fa633c8558da82c146eb238bc461be908c6cf2",
+      "retrieved_at_utc": "2026-09-22T18:09:56+00:00",
+      "spectrum": "Ge III"
+    },
+    "3": {
+      "bound_levels_written": 39,
+      "excluded_at_or_above_threshold": 15,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ge_IV_levels.tsv",
+      "file_sha256": "sha256:fb7b8fab86c4972c2b8d54d2772dc8c8e5c9664d86f7170e9cc6a1bef0ee4d83",
+      "ionization_cutoff_ev": 45.7155,
+      "parsed_levels": 54,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ge+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 55,
+      "response_sha256": "sha256:013c398a5ada61a2ea75fa8c24a5393855810b995940b831d9e0ee5895cf9961",
+      "retrieved_at_utc": "2026-09-22T18:09:57+00:00",
+      "spectrum": "Ge IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:19087444e723b27bd4e0862fa19c023c045af1e522bdb485e75ce47ba4e85860",
+  "symbol": "Ge"
+}

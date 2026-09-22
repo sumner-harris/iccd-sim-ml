@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Co I	0	7.88101			0.00012	L10545
+Co II	1	17.0844			0.0012	L7185,L2115
+Co III	2	33.5	[	]	0.06	L7185,L17500
+Co IV	3	51.27	[	]	0.10	L7185,L241

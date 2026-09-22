@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:09:38+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:8dddef6db71e8d23a554d5bb9fcc4993e4a54a36c071dde30a4dace5de06174c",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ca&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:5d6554009d65324329891cde8bbedf90ccdf5750b2dcea101e715a02aa0bc094",
+    "retrieved_at_utc": "2026-09-22T18:09:35+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 6.113154921,
+        "prefix": "",
+        "references": "L22848",
+        "spectrum": "Ca I",
+        "suffix": "",
+        "uncertainty_ev": "0.0000000005"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 11.871719,
+        "prefix": "",
+        "references": "L7185,L7323",
+        "spectrum": "Ca II",
+        "suffix": "",
+        "uncertainty_ev": "0.000004"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 50.91316,
+        "prefix": "",
+        "references": "L1405",
+        "spectrum": "Ca III",
+        "suffix": "",
+        "uncertainty_ev": "0.00025"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 67.2732,
+        "prefix": "[",
+        "references": "L11770",
+        "spectrum": "Ca IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.0021"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 455,
+      "excluded_at_or_above_threshold": 325,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ca_I_levels.tsv",
+      "file_sha256": "sha256:a22ebc001914b185c4683df9ac843c2ad3e8e125b20d1fe19756be390c707d1d",
+      "ionization_cutoff_ev": 6.113154921,
+      "parsed_levels": 780,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ca+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 787,
+      "response_sha256": "sha256:7dacf91f79d7d578478a3e5c87d9cb35c6ab6771ac65a667f570ac8e34b188e1",
+      "retrieved_at_utc": "2026-09-22T18:09:35+00:00",
+      "spectrum": "Ca I"
+    },
+    "1": {
+      "bound_levels_written": 69,
+      "excluded_at_or_above_threshold": 2,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ca_II_levels.tsv",
+      "file_sha256": "sha256:36157d5f25c7e4323abff273bbd135c4f8978cb89f881a3ed73871f7f8b0a8c3",
+      "ionization_cutoff_ev": 11.871719,
+      "parsed_levels": 71,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ca+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 72,
+      "response_sha256": "sha256:036017b5dce384ded2f8fde5af1c3ffa3d0081a16870b36875a5d235e4d412f0",
+      "retrieved_at_utc": "2026-09-22T18:09:36+00:00",
+      "spectrum": "Ca II"
+    },
+    "2": {
+      "bound_levels_written": 175,
+      "excluded_at_or_above_threshold": 6,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ca_III_levels.tsv",
+      "file_sha256": "sha256:034eaeaa1864e758d74b8f06e8bfbfbee3f2c85a2b81cc09ba058fbedb4c115b",
+      "ionization_cutoff_ev": 50.91316,
+      "parsed_levels": 181,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ca+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 182,
+      "response_sha256": "sha256:e1a925f42de0606735deb6ef57e380d4aa09f96478668ee6b21c15bd833588fe",
+      "retrieved_at_utc": "2026-09-22T18:09:37+00:00",
+      "spectrum": "Ca III"
+    },
+    "3": {
+      "bound_levels_written": 70,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ca_IV_levels.tsv",
+      "file_sha256": "sha256:d62de131a4c1887eea60b28f3b1ed0b42dbce2ade3f572fe7b24729202d8862c",
+      "ionization_cutoff_ev": 67.2732,
+      "parsed_levels": 70,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ca+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 71,
+      "response_sha256": "sha256:53a393403f0444cb3a570b7ebb2fb61014396101435929a5455ab925d2aa511e",
+      "retrieved_at_utc": "2026-09-22T18:09:38+00:00",
+      "spectrum": "Ca IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:f8325526ff6aec68682df7517a342aed9cdbf618aa13e6af64d6e50738f004d9",
+  "symbol": "Ca"
+}

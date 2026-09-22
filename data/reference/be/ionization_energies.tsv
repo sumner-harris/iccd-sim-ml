@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Be I	0	9.322699			0.000007	L5964
+Be II	1	18.21115			0.00004	L12158
+Be III	2	153.896205	(	)	0.000004	L10054
+Be IV	3	217.71858459	(	)	0.00000010	L19200

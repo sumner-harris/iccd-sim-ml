@@ -1,0 +1,5 @@
+spectrum	charge	energy_ev	prefix	suffix	uncertainty_ev	references
+Ca I	0	6.113154921			0.0000000005	L22848
+Ca II	1	11.871719			0.000004	L7185,L7323
+Ca III	2	50.91316			0.00025	L1405
+Ca IV	3	67.2732	[	]	0.0021	L11770

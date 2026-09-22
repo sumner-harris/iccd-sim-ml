@@ -1,0 +1,114 @@
+{
+  "generated_at_utc": "2026-09-22T18:10:00+00:00",
+  "ionization_query": {
+    "file": "ionization_energies.tsv",
+    "file_sha256": "sha256:9ef6f9ff1b774b635081d1f71e7a1cbf5f5da8dd06e8b5ec0902338b465486de",
+    "query_url": "https://physics.nist.gov/cgi-bin/ASD/ie.pl?spectra=Ho&units=1&format=2&order=0&sp_name_out=on&ion_charge_out=on&e_out=0&unc_out=on&biblio=on",
+    "response_sha256": "sha256:462610075da4719ef5c377cf3a6bc540cccfcc11c534429fbd2b4c9ac866df8a",
+    "retrieved_at_utc": "2026-09-22T18:09:57+00:00",
+    "values": [
+      {
+        "charge": 0,
+        "energy_ev": 6.0215,
+        "prefix": "",
+        "references": "L4277",
+        "spectrum": "Ho I",
+        "suffix": "",
+        "uncertainty_ev": "0.0006"
+      },
+      {
+        "charge": 1,
+        "energy_ev": 11.781,
+        "prefix": "[",
+        "references": "L19870c180",
+        "spectrum": "Ho II",
+        "suffix": "]",
+        "uncertainty_ev": "0.020"
+      },
+      {
+        "charge": 2,
+        "energy_ev": 22.79,
+        "prefix": "[",
+        "references": "L19883c180",
+        "spectrum": "Ho III",
+        "suffix": "]",
+        "uncertainty_ev": "0.03"
+      },
+      {
+        "charge": 3,
+        "energy_ev": 42.52,
+        "prefix": "[",
+        "references": "L19883c180",
+        "spectrum": "Ho IV",
+        "suffix": "]",
+        "uncertainty_ev": "0.08"
+      }
+    ]
+  },
+  "levels": {
+    "0": {
+      "bound_levels_written": 230,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ho_I_levels.tsv",
+      "file_sha256": "sha256:2882ac3f3b8dcff1a75f71f9efbc3197588337de6b60f1d1aa9e431d1b36f159",
+      "ionization_cutoff_ev": 6.0215,
+      "parsed_levels": 230,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ho+I&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 231,
+      "response_sha256": "sha256:a6c71f4e2a06364a98c3385e56b9ec4dc76151b3b92099c48c5fea5f47797489",
+      "retrieved_at_utc": "2026-09-22T18:09:58+00:00",
+      "spectrum": "Ho I"
+    },
+    "1": {
+      "bound_levels_written": 49,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ho_II_levels.tsv",
+      "file_sha256": "sha256:6526672e94d577e26d1059173a0d633b8bbe2fbfe3f3c33200d8cdb3a1190a32",
+      "ionization_cutoff_ev": 11.781,
+      "parsed_levels": 49,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ho+II&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 50,
+      "response_sha256": "sha256:d9558574d13cebce23243256f8faa9add66c5de3090c16d5544a140b10991544",
+      "retrieved_at_utc": "2026-09-22T18:09:59+00:00",
+      "spectrum": "Ho II"
+    },
+    "2": {
+      "bound_levels_written": 121,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ho_III_levels.tsv",
+      "file_sha256": "sha256:3342614f036a95e3d71af285c139d21a27b60a2980599825f2e4b6149522fa05",
+      "ionization_cutoff_ev": 22.79,
+      "parsed_levels": 121,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ho+III&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 122,
+      "response_sha256": "sha256:b6b39c7f59e464ce2a9288af7990346a21747366ffad1c8b0ed2dd0b9c6a6d2f",
+      "retrieved_at_utc": "2026-09-22T18:09:59+00:00",
+      "spectrum": "Ho III"
+    },
+    "3": {
+      "bound_levels_written": 20,
+      "excluded_at_or_above_threshold": 0,
+      "excluded_nonabsolute_levels": 0,
+      "file": "Ho_IV_levels.tsv",
+      "file_sha256": "sha256:201d940ded4b209968fff92befaa01a38a680a08c893f2bb8f2615a67bcb6f96",
+      "ionization_cutoff_ev": 42.52,
+      "parsed_levels": 20,
+      "query_url": "https://physics.nist.gov/cgi-bin/ASD/energy1.pl?de=0&spectrum=Ho+IV&units=1&format=0&output=0&page_size=5000&multiplet_ordered=1&conf_out=on&term_out=on&level_out=on&unc_out=1&j_out=on&g_out=on&lande_out=on&perc_out=on&biblio=on&splitting=1",
+      "reported_levels": 21,
+      "response_sha256": "sha256:246bd035a02ebd10bfa9eb46686f2390b6251551d60434d59ad8d00e1644ebfc",
+      "retrieved_at_utc": "2026-09-22T18:10:00+00:00",
+      "spectrum": "Ho IV"
+    }
+  },
+  "nist_asd_doi": "10.18434/T4W30F",
+  "nist_asd_versions": [
+    "5.12"
+  ],
+  "schema_version": 1,
+  "source": "NIST Atomic Spectra Database",
+  "species_sha256": "sha256:6c17e6cd39a884db738e8188f7f0b12ef393434633c27c2750c33db71194141f",
+  "symbol": "Ho"
+}
