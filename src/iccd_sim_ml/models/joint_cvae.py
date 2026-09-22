@@ -578,6 +578,7 @@ class JointConditionalVAE(nn.Module):
         )
         temperature = self._validate_temperature(temperature)
         condition_embedding = self._condition(laser_conditions, material_properties)
+        repeated_identical_latent = False
 
         if latent is None:
             prior_mean, prior_log_variance = self._distribution_parameters(
@@ -587,10 +588,12 @@ class JointConditionalVAE(nn.Module):
             log_variance = prior_log_variance[:, None, :].expand(-1, num_samples, -1)
             latents = self._sample(mean, log_variance, temperature)
             sample_count = num_samples
+            repeated_identical_latent = temperature == 0.0
         elif latent.ndim == 2:
             self._validate_latent(latent, batch_size)
             sample_count = num_samples
             latents = latent[:, None, :].expand(-1, sample_count, -1)
+            repeated_identical_latent = True
         elif latent.ndim == 3:
             expected = (batch_size, latent.shape[1], self.config.latent_dim)
             if tuple(latent.shape) != expected:
@@ -604,6 +607,17 @@ class JointConditionalVAE(nn.Module):
             latents = latent
         else:
             raise ValueError("latent must have shape (B,Z) or (B,S,Z)")
+
+        # Decode an intentionally repeated latent once. Besides avoiding duplicate
+        # work, this guarantees bitwise-identical deterministic samples on GPU;
+        # batched convolution kernels can otherwise differ at round-off level by
+        # batch position even when their inputs are identical.
+        if repeated_identical_latent:
+            decoder_input = torch.cat((latents[:, 0, :], condition_embedding), dim=1)
+            generated = self.decoder(decoder_input, condition_embedding)
+            return generated[:, None, ...].expand(
+                -1, sample_count, *self.config.video_shape
+            ).clone()
 
         repeated_condition = condition_embedding[:, None, :].expand(-1, sample_count, -1)
         decoder_input = torch.cat((latents, repeated_condition), dim=2).reshape(
