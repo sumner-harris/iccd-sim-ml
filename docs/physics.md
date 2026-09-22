@@ -33,8 +33,7 @@ corrected 248-nm values are retained as useful validation references.
 
 Photoionization uses explicit element-specific ionization energies and energy
 levels for LTE partition functions. Electron-neutral inverse bremsstrahlung
-uses the declared project-wide constant `Q = 1e-40 cm^5`, converted to
-`1e-50 m^5` for the SI implementation, for every element.
+uses the declared project-wide constant `Q = 1e-50 m^5` for every element.
 Electron-ion inverse
 bremsstrahlung includes charge weighting `n1 + 4 n2`. Stable implementations
 of the stimulated-emission factor use `-expm1(-h c / (lambda k T))`. The

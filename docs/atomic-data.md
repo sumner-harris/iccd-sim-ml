@@ -19,7 +19,7 @@ therefore produce plausible-looking but incorrectly labeled images.
 
 Species-specific electron--neutral momentum-transfer tables are not available
 for the target set. By project decision, every element therefore uses the same
-declared `Q = 1e-40 cm^5` kernel (`1e-50 m^5` in SI). The stimulated-emission factor still makes
+declared SI `Q = 1e-50 m^5` kernel. The stimulated-emission factor still makes
 the resulting electron--neutral coefficient depend on temperature and
 wavelength, but the underlying `Q` is fixed and element independent.
 
@@ -107,8 +107,7 @@ Approximate mode exists for software integration and sensitivity studies. For
 an element without a bundle it:
 
 - retains the generic electron--ion Kramers term with Gaunt factor one;
-- uses the same project-wide electron--neutral `Q = 1e-40 cm^5`
-  (`1e-50 m^5` internally); and
+- uses the same project-wide electron--neutral `Q = 1e-50 m^5`; and
 - sets unavailable photoionization contributions to zero.
 
 Every such NPZ is labeled `approximate_incomplete_continuum`. Its missing

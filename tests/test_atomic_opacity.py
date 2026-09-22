@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 
 from iccd_sim_ml.atomic.catalog import (
-    FIXED_ELECTRON_NEUTRAL_Q_CM5,
     FIXED_ELECTRON_NEUTRAL_Q_M5,
     AtomicDataCatalog,
     AtomicDataUnavailableError,
@@ -277,11 +276,8 @@ class AtomicCatalogTests(unittest.TestCase):
         self.assertIn("species.json", fingerprint["files"])
         self.assertNotIn("MT_01_01", fingerprint["files"])
         self.assertEqual(
-            fingerprint["electron_neutral_fixed_Q"],
-            {
-                "Q_cm5": FIXED_ELECTRON_NEUTRAL_Q_CM5,
-                "Q_m5": FIXED_ELECTRON_NEUTRAL_Q_M5,
-            },
+            fingerprint["electron_neutral_fixed_Q_m5"],
+            FIXED_ELECTRON_NEUTRAL_Q_M5,
         )
 
     def test_missing_element_fails_strict_and_is_explicit_in_approximate_mode(self) -> None:

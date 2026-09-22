@@ -10,7 +10,7 @@
   "species": {
     "Cu": "cu/species.json"
   },
-  "electron_neutral_fixed_Q_cm5": 1e-40,
+  "electron_neutral_fixed_Q_m5": 1e-50,
   "provenance": {
     "target_element_source": "HDF5 filename inventory plus planned C and As",
     "nist_asd_doi": "10.18434/T4W30F"

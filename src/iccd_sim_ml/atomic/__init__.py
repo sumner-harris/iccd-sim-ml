@@ -1,7 +1,6 @@
 """Atomic reference-data loaders and continuum opacity models."""
 
 from .catalog import (
-    FIXED_ELECTRON_NEUTRAL_Q_CM5,
     FIXED_ELECTRON_NEUTRAL_Q_M5,
     LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5,
     AtomicDataCatalog,
@@ -24,7 +23,6 @@ __all__ = [
     "ContinuumOpacityLookup",
     "ContinuumOpacityModel",
     "EnergyLevels",
-    "FIXED_ELECTRON_NEUTRAL_Q_CM5",
     "FIXED_ELECTRON_NEUTRAL_Q_M5",
     "MomentumTransferTable",
     "OpacityComponents",

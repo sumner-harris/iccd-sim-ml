@@ -14,11 +14,8 @@ from .species import AtomicSpecies
 
 AtomicMode = Literal["strict", "approximate"]
 
-# Project-wide electron--neutral inverse-bremsstrahlung assumption. The source
-# convention is cgs; the opacity implementation converts it to SI exactly once.
-FIXED_ELECTRON_NEUTRAL_Q_CM5 = 1.0e-40
-CM5_TO_M5 = 1.0e-10
-FIXED_ELECTRON_NEUTRAL_Q_M5 = FIXED_ELECTRON_NEUTRAL_Q_CM5 * CM5_TO_M5
+# Project-wide electron--neutral inverse-bremsstrahlung assumption in SI.
+FIXED_ELECTRON_NEUTRAL_Q_M5 = 1.0e-50
 # Kept as a public alias for callers written before the fixed-Q policy was
 # adopted. Both names refer to the same active model constant.
 LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5 = FIXED_ELECTRON_NEUTRAL_Q_M5
@@ -89,16 +86,10 @@ class AtomicReference:
             files[path.name] = f"sha256:{_sha256(path)}"
         if self.descriptor_path is not None:
             files[self.descriptor_path.name] = f"sha256:{_sha256(self.descriptor_path)}"
-        electron_neutral = None
-        if self.electron_neutral_constant_m5 is not None:
-            electron_neutral = {
-                "Q_cm5": self.electron_neutral_constant_m5 / CM5_TO_M5,
-                "Q_m5": self.electron_neutral_constant_m5,
-            }
         return {
             "symbol": self.species.symbol,
             "status": self.status.to_dict(),
-            "electron_neutral_fixed_Q": electron_neutral,
+            "electron_neutral_fixed_Q_m5": self.electron_neutral_constant_m5,
             "descriptor": self.descriptor,
             "files": files,
         }
@@ -121,13 +112,12 @@ class AtomicDataCatalog:
         self.root = Path(root).expanduser().resolve()
         self.catalog_path = self.root / "catalog.json"
         self.catalog = self._read_json(self.catalog_path) if self.catalog_path.is_file() else {}
-        fixed_q_cm5 = float(
-            self.catalog.get("electron_neutral_fixed_Q_cm5", FIXED_ELECTRON_NEUTRAL_Q_CM5)
+        fixed_q_m5 = float(
+            self.catalog.get("electron_neutral_fixed_Q_m5", FIXED_ELECTRON_NEUTRAL_Q_M5)
         )
-        if not 0.0 < fixed_q_cm5 < float("inf"):
-            raise ValueError("electron_neutral_fixed_Q_cm5 must be finite and positive")
-        self.electron_neutral_fixed_q_cm5 = fixed_q_cm5
-        self.electron_neutral_fixed_q_m5 = fixed_q_cm5 * CM5_TO_M5
+        if not 0.0 < fixed_q_m5 < float("inf"):
+            raise ValueError("electron_neutral_fixed_Q_m5 must be finite and positive")
+        self.electron_neutral_fixed_q_m5 = fixed_q_m5
 
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:
@@ -210,8 +200,7 @@ class AtomicDataCatalog:
             electron_neutral_model = "project_fixed_Q"
             warnings.append(
                 "electron-neutral inverse bremsstrahlung uses the declared project-wide "
-                f"fixed Q={self.electron_neutral_fixed_q_cm5:.6g} cm^5 "
-                f"({constant_q:.6g} m^5) for every element"
+                f"fixed Q={constant_q:.6g} m^5 for every element"
             )
 
         charges = species.photoionization_charge_states()
@@ -270,8 +259,7 @@ class AtomicDataCatalog:
             electron_neutral_model = "project_fixed_Q"
             warnings.append(
                 "electron-neutral inverse bremsstrahlung uses the declared project-wide "
-                f"fixed Q={self.electron_neutral_fixed_q_cm5:.6g} cm^5 "
-                f"({constant_q:.6g} m^5) for every element"
+                f"fixed Q={constant_q:.6g} m^5 for every element"
             )
         if require_photoionization:
             missing.append("photoionization_charge_states:0,1,2")
@@ -305,7 +293,6 @@ __all__ = [
     "AtomicDataUnavailableError",
     "AtomicMode",
     "AtomicReference",
-    "FIXED_ELECTRON_NEUTRAL_Q_CM5",
     "FIXED_ELECTRON_NEUTRAL_Q_M5",
     "LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5",
     "REQUIRED_PHOTOIONIZATION_CHARGE_STATES",
