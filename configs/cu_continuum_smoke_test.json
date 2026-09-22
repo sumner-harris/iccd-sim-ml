@@ -5,6 +5,8 @@
   "radial_points": 24,
   "axial_points": 24,
   "line_of_sight_points": 32,
+  "radial_max_m": 0.1,
+  "axial_max_m": 0.18,
   "temperature_table_min_K": 300.0,
   "temperature_table_max_K": 100000.0,
   "temperature_table_points": 80,

@@ -83,6 +83,7 @@ def plasma_timestep_from_array(
     source: str | Path,
     source_key: str | None = None,
     time_s: float | None = None,
+    mesh_level_index: int | None = None,
 ) -> PlasmaTimestep:
     """Build a validated timestep from an in-memory solver array.
 
@@ -96,11 +97,21 @@ def plasma_timestep_from_array(
             f"Data have shape {values.shape}; expected "
             f"(points, >= {PLASMA_DAT_REQUIRED_COLUMN_COUNT})"
         )
-    if values.shape[1] == PLASMA_DAT_REQUIRED_COLUMN_COUNT:
+    source_column_count = values.shape[1]
+    if mesh_level_index is not None and not 0 <= mesh_level_index < source_column_count:
+        raise ValueError(
+            f"mesh_level_index {mesh_level_index} is outside the {source_column_count}-column array"
+        )
+    if source_column_count == PLASMA_DAT_REQUIRED_COLUMN_COUNT:
         values = np.column_stack((values, np.full(values.shape[0], np.nan)))
     column = {spec.name: values[:, spec.index] for spec in PLASMA_DAT_COLUMNS}
+    if mesh_level_index is not None:
+        column["mesh_level"] = values[:, mesh_level_index]
     timestep = PlasmaTimestep(
-        source=Path(source).expanduser().resolve(),
+        # Avoid dereferencing mapped/network files: on Windows a read-only SMB
+        # file can reject the metadata handle used by ``Path.resolve()`` even
+        # when the data file itself is readable.
+        source=Path(source).expanduser().absolute(),
         source_key=source_key,
         time_s=time_s,
         z_m=column["z"],
@@ -145,7 +156,7 @@ def parse_header(path: str | Path) -> tuple[str, ...]:
 def load_plasma_timestep(path: str | Path) -> PlasmaTimestep:
     """Load the standard 21-column solver export and assign SI-aware fields."""
 
-    source = Path(path).expanduser().resolve()
+    source = Path(path).expanduser().absolute()
     header_names = parse_header(source)
     if len(header_names) < PLASMA_DAT_REQUIRED_COLUMN_COUNT:
         raise ValueError(

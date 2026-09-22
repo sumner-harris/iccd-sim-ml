@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -161,6 +162,62 @@ def _save_sequence(path: Path, result: SequenceSimulation, metadata: dict[str, A
     np.savez_compressed(path, **arrays)
 
 
+def _sequence_cache_request(
+    simulation, indices: list[int], config: ImagingConfig, reference: Path
+) -> dict[str, Any]:
+    try:
+        source_stat = simulation.source.stat()
+        source_file_identity: dict[str, int] | None = {
+            "size_bytes": source_stat.st_size,
+            "mtime_ns": source_stat.st_mtime_ns,
+        }
+    except OSError:
+        # Read-only SMB mappings can permit HDF5 reads while rejecting the
+        # metadata handle used by stat() with WinError 33. Group attributes,
+        # selected dataset keys, and the path still provide a stable identity.
+        source_file_identity = None
+    manifest_path = reference / "manifest.json"
+    atomic_manifest = (
+        json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
+    )
+    return {
+        "schema": 1,
+        "package_version": __version__,
+        "source": str(simulation.source),
+        "source_file_identity": source_file_identity,
+        "simulation_key": simulation.key,
+        "simulation_attrs": simulation.attrs,
+        "source_timestep_keys": [simulation.timestep_keys[index] for index in indices],
+        "config": config.to_dict(),
+        "atomic_manifest": atomic_manifest,
+    }
+
+
+def _cache_key(request: dict[str, Any]) -> str:
+    serialized = json.dumps(request, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _sequence_cache_hit(path: Path, expected_key: str, expected_frames: int) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        with np.load(path, allow_pickle=False) as product:
+            required = {"video", "times_s", "x_m", "z_m", "metadata_json"}
+            if not required.issubset(product.files):
+                return False
+            video = product["video"]
+            times = product["times_s"]
+            if video.ndim != 3 or video.shape[0] != expected_frames:
+                return False
+            if times.shape != (expected_frames,) or not np.isfinite(video).all():
+                return False
+            metadata = json.loads(str(product["metadata_json"].item()))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return False
+    return metadata.get("cache_key") == expected_key
+
+
 def _display_scale(image: np.ndarray) -> np.ndarray:
     finite = np.where(np.isfinite(image) & (image > 0), image, 0.0)
     positive = finite[finite > 0]
@@ -250,7 +307,7 @@ def _add_simulation_arguments(parser: argparse.ArgumentParser) -> None:
 def _inspect_h5(args: argparse.Namespace) -> int:
     simulations = list_h5_simulations(args.path)
     payload = {
-        "path": str(args.path.resolve()),
+        "path": str(args.path.expanduser().absolute()),
         "simulation_count": len(simulations),
         "simulations": [
             {
@@ -300,8 +357,8 @@ def _simulate_timestep(args: argparse.Namespace) -> int:
 def _simulate_sequence(args: argparse.Namespace) -> int:
     config = ImagingConfig.from_json(args.config)
     reference = args.atomic_reference.resolve()
-    simulations = list_h5_simulations(args.path)
     if args.simulation is None:
+        simulations = list_h5_simulations(args.path)
         simulation = select_representative_simulation(simulations)
     else:
         simulation = get_h5_simulation(args.path, args.simulation)
@@ -310,6 +367,16 @@ def _simulate_sequence(args: argparse.Namespace) -> int:
         indices = indices[: args.max_frames]
     if not indices:
         raise ValueError("Frame selection is empty")
+    cache_request = _sequence_cache_request(simulation, indices, config, reference)
+    cache_key = _cache_key(cache_request)
+    preview_available = args.preview is None or args.preview.is_file()
+    if (
+        args.reuse_existing
+        and preview_available
+        and _sequence_cache_hit(args.output, cache_key, len(indices))
+    ):
+        print(f"Cache hit: reusing {args.output}", flush=True)
+        return 0
     _, lookup = _atomic_models(config, reference)
     total = len(indices)
     print(
@@ -336,6 +403,8 @@ def _simulate_sequence(args: argparse.Namespace) -> int:
             "source_index_warnings": simulation.index_warnings,
             "quality_flags_by_frame": result.quality_flags_by_frame,
             "frame_stride": args.stride,
+            "cache_key": cache_key,
+            "cache_request": cache_request,
         }
     )
     _save_sequence(args.output, result, metadata)
@@ -369,6 +438,11 @@ def build_parser() -> argparse.ArgumentParser:
     sequence_parser.add_argument("--simulation", help="Exact HDF5 group key")
     sequence_parser.add_argument("--stride", type=int, default=1)
     sequence_parser.add_argument("--max-frames", type=int)
+    sequence_parser.add_argument(
+        "--reuse-existing",
+        action="store_true",
+        help="Reuse a validated output whose source, frames, physics config, and atomic data match",
+    )
     sequence_parser.set_defaults(function=_simulate_sequence)
     return parser
 

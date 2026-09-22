@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import pytest
 
+from iccd_sim_ml.imaging import ImagingConfig, simulate_continuum_sequence
 from iccd_sim_ml.imaging.blackbody import planck_photon_radiance_lambda
 from iccd_sim_ml.imaging.grid import SideViewState, infer_dyadic_domain_max
 from iccd_sim_ml.imaging.transfer import formal_solution_step, solve_lte_continuum
@@ -62,3 +64,8 @@ def test_domain_inference_recovers_dyadic_edge() -> None:
     minimum_center = 0.05 / 1024.0
     coordinates = np.asarray([minimum_center, 500 * minimum_center, 1008 * minimum_center])
     assert np.isclose(infer_dyadic_domain_max(coordinates), 0.05)
+
+
+def test_sequence_requires_explicit_fixed_field_of_view() -> None:
+    with pytest.raises(ValueError, match="explicit radial_max_m and axial_max_m"):
+        simulate_continuum_sequence([], ImagingConfig(), _ConstantOpacity(0.3))

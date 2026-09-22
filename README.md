@@ -69,13 +69,24 @@ representative-condition selector is used:
 
 ```powershell
 uv run iccd-sim sequence "C:\path\to\Cu_6.h5" `
+  --simulation Cu_3_68 `
   --config configs\cu_continuum_flat_response.json `
   --atomic-reference data\reference\cu `
-  --output outputs\cu_sequence.npz
+  --output outputs\cu_sequence.npz `
+  --reuse-existing
 ```
 
 Use `--stride` or `--max-frames` for a faster smoke test. Frame zero is kept;
-times are parsed from dataset names and need not be uniformly spaced.
+times are parsed from dataset names and need not be uniformly spaced. Named
+groups are indexed directly, so the other simulations in a large container
+are not scanned. `--reuse-existing` validates a fingerprint of the source
+group, selected frame keys, physics configuration, package version, and atomic
+data before treating the output NPZ as a cache hit.
+
+The maintained HDF5 reader targets the current 34-column solver export only;
+older HDF5 layouts are rejected explicitly. See
+[hdf5-schema.md](docs/hdf5-schema.md) for the field mapping and streaming
+policy.
 
 ## Joint conditional model
 

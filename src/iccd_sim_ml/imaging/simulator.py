@@ -81,7 +81,13 @@ def simulate_continuum_sequence(
     *,
     progress: Callable[[int, ImageSimulation], None] | None = None,
 ) -> SequenceSimulation:
-    """Simulate a sequence on one spatial grid determined from its first frame."""
+    """Simulate a sequence on one explicitly declared, fixed spatial grid."""
+
+    if config.radial_max_m is None or config.axial_max_m is None:
+        raise ValueError(
+            "Sequence simulation requires explicit radial_max_m and axial_max_m; "
+            "inferring them from frame zero can crop an expanding plume"
+        )
 
     iterator = iter(timesteps)
     try:
@@ -101,8 +107,8 @@ def simulate_continuum_sequence(
     flags = [first_frame.quality_flags]
     if progress is not None:
         progress(0, first_frame)
-    radial_max = float(first_grid.r_m[-1])
-    axial_max = float(first_grid.z_m[-1])
+    radial_max = config.radial_max_m
+    axial_max = config.axial_max_m
     for timestep in iterator:
         grid = resample_timestep(
             timestep,
