@@ -7,6 +7,7 @@ import csv
 import json
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,7 +25,7 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from iccd_sim_ml.atomic import AtomicDataCatalog  # noqa: E402
-from iccd_sim_ml.data import DatasetManifest  # noqa: E402
+from iccd_sim_ml.data import DatasetManifest, SampleRecord  # noqa: E402
 from iccd_sim_ml.imaging import ImagingConfig  # noqa: E402
 from iccd_sim_ml.io import get_h5_simulation, list_h5_simulations  # noqa: E402
 from iccd_sim_ml.pipeline import (  # noqa: E402
@@ -65,6 +66,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--start-ns", type=float, default=0.0)
     parser.add_argument("--stop-ns", type=float, default=5000.0)
     parser.add_argument("--sparse-level-threshold", type=int, default=10)
+    parser.add_argument("--workers", type=int, default=4)
     return parser.parse_args()
 
 
@@ -133,12 +135,45 @@ def _plots(rows: list[dict[str, Any]], output_dir: Path, *, sparse_level_thresho
     plt.close(figure)
 
 
+def _cache_one_sample(
+    sample: Any,
+    cache_dir: Path,
+    config: ContinuumCacheConfig,
+    atomic_reference: Path,
+) -> dict[str, Any]:
+    """Build or validate one element cache in a process-isolated directory."""
+
+    element_cache = cache_dir / "elements" / sample.element
+    started = time.perf_counter()
+    result = ensure_continuum_cache((sample,), element_cache, config, atomic_reference)
+    elapsed = time.perf_counter() - started
+    source_record = result.manifest.records[0]
+    cache_path = result.manifest.resolve_path(source_record)
+    record = SampleRecord(
+        sample_id=source_record.sample_id,
+        path=cache_path,
+        element=source_record.element,
+        simulation_id=source_record.simulation_id,
+        family_id=source_record.family_id,
+        metadata=source_record.metadata,
+    )
+    return {
+        "element": sample.element,
+        "record": record,
+        "cache_path": cache_path,
+        "cache_status": "miss" if result.misses else "hit",
+        "elapsed_seconds": elapsed,
+    }
+
+
 def main() -> int:
     args = _parse_args()
     cache_dir = args.cache_dir.expanduser().resolve()
     output_dir = args.output_dir.expanduser().resolve()
     cache_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if args.workers < 1:
+        raise ValueError("--workers must be positive")
     catalog = AtomicDataCatalog(args.atomic_reference)
     elements = tuple(args.elements or catalog.target_elements)
     imaging = ImagingConfig(
@@ -171,34 +206,53 @@ def main() -> int:
     progress: dict[str, Any] = {}
     if progress_path.is_file():
         progress = json.loads(progress_path.read_text(encoding="utf-8")).get("elements", {})
-    records = []
+    records_by_element: dict[str, SampleRecord] = {}
     run_started = time.perf_counter()
-    for index, sample in enumerate(samples, start=1):
-        started = time.perf_counter()
-        result = ensure_continuum_cache((sample,), cache_dir, cache_config, args.atomic_reference)
-        elapsed = time.perf_counter() - started
-        records.extend(result.manifest.records)
-        cache_path = result.manifest.resolve_path(result.manifest.records[0])
-        previous = progress.get(sample.element, {})
-        generation_seconds = elapsed if result.misses else previous.get("generation_seconds")
-        progress[sample.element] = {
-            "sample_id": sample.sample_id,
-            "simulation_key": sample.simulation_key,
-            "cache_status": "miss" if result.misses else "hit",
-            "last_call_seconds": elapsed,
-            "generation_seconds": generation_seconds,
-            "cache_bytes": cache_path.stat().st_size,
-            "completed_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    sample_by_element = {sample.element: sample for sample in samples}
+    completed = 0
+    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+        future_to_element = {
+            executor.submit(
+                _cache_one_sample,
+                sample,
+                cache_dir,
+                cache_config,
+                args.atomic_reference.expanduser().resolve(),
+            ): sample.element
+            for sample in samples
         }
-        _write_json(
-            progress_path,
-            {"schema_version": 1, "config": asdict(cache_config), "elements": progress},
-        )
-        print(
-            f"[{index}/{len(samples)}] {sample.element}: "
-            f"{'generated' if result.misses else 'reused'} in {elapsed:.1f} s",
-            flush=True,
-        )
+        for future in as_completed(future_to_element):
+            element = future_to_element[future]
+            result = future.result()
+            records_by_element[element] = result["record"]
+            cache_path = result["cache_path"]
+            elapsed = float(result["elapsed_seconds"])
+            previous = progress.get(element, {})
+            generation_seconds = (
+                elapsed if result["cache_status"] == "miss" else previous.get("generation_seconds")
+            )
+            sample = sample_by_element[element]
+            progress[element] = {
+                "sample_id": sample.sample_id,
+                "simulation_key": sample.simulation_key,
+                "cache_status": result["cache_status"],
+                "last_call_seconds": elapsed,
+                "generation_seconds": generation_seconds,
+                "cache_bytes": cache_path.stat().st_size,
+                "completed_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            }
+            _write_json(
+                progress_path,
+                {"schema_version": 1, "config": asdict(cache_config), "elements": progress},
+            )
+            completed += 1
+            print(
+                f"[{completed}/{len(samples)}] {element}: "
+                f"{'generated' if result['cache_status'] == 'miss' else 'reused'} "
+                f"in {elapsed:.1f} s",
+                flush=True,
+            )
+    records = [records_by_element[sample.element] for sample in samples]
     manifest_path = DatasetManifest(tuple(records)).save(cache_dir / "manifest.json")
     manifest = DatasetManifest.load(manifest_path)
 
