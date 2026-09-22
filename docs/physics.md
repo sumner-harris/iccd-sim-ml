@@ -100,6 +100,15 @@ and copper visible emission is often line dominated.
   are quadrature choices, not camera pixels. Production datasets should be
   preceded by spatial, line-of-sight, spectral, and temperature-lookup
   convergence studies.
+- For ML training, the current balanced baseline is 48 wavelengths over
+  300--800 nm, a 96 x 96 image, 128 line-of-sight cells, and a 160-point
+  temperature lookup. In the coupled 3006 ns Cu sweep this `r3` profile took
+  about 37 seconds per CPU frame. Its integrated radiance differed by 4.7%
+  and its interpolated image L2 norm by 12% from the finest tested `r4`
+  profile (64 wavelengths, 128 x 128, 192 LOS). It is therefore a deliberate
+  cost/quality compromise for dataset generation, not a converged reference.
+- The 96 x 96 array is the saved model input. The 128 LOS cells exist only
+  during ray integration and do not add a dimension to the saved video.
 - Lookup queries outside the configured temperature range are clipped to the
   nearest edge. The standalone example has a few colder vacuum cells with
   zero contributing particle densities, so its 300 K floor does not change

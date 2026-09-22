@@ -46,6 +46,20 @@ store an explicit validity mask and use it in every reconstruction metric and
 loss. Any clipping, interpolation method, or extrapolation policy is part of
 the data specification and must be identical across partitions.
 
+For the initial ML dataset, use the balanced `r3` imaging profile as the
+default preprocessing target: 48 wavelengths, 96 x 96 saved images, and 128
+line-of-sight quadrature cells. The LOS count affects image formation but is
+not part of the tensor shape. The resulting unbatched tensor is
+`(C,T,H,W) = (1,T,96,96)`. Treat this as a versioned dataset choice: do not mix
+64 x 64, 96 x 96, and 128 x 128 simulations within one split unless an
+explicit, identical resampling step produces the canonical 96 x 96 grid.
+
+The supplied balanced Cu configuration uses a fixed `x = +/-15 mm`,
+`z = 0--32 mm` field of view selected for the approximately 0--5 microsecond
+window. Spatial shape alone is insufficient metadata; record the physical
+field of view and time grid because two 96 x 96 videos with different bounds
+do not represent the same measurement.
+
 ## Split according to the scientific claim
 
 The correct split depends on what is being claimed:

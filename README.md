@@ -102,6 +102,33 @@ The script saves each physical-radiance array, a shared-scale comparison plot,
 and JSON/CSV convergence metrics. Every profile uses the same declared field
 of view so differences measure numerical resolution rather than cropping.
 
+## Recommended ML simulation profile
+
+For offline generation of ML training videos, the recommended balanced
+starting point is the measured `r3` profile:
+
+- 48 uniformly spaced wavelengths from 300 to 800 nm;
+- a 96 x 96 output image;
+- 128 line-of-sight integration cells per image ray;
+- 160 points in the temperature-opacity lookup table.
+
+Use [`configs/cu_continuum_ml_balanced.json`](configs/cu_continuum_ml_balanced.json)
+for the early-time Cu field of view tested here. On the 3006 ns benchmark it
+required about 37 seconds per frame on CPU, while its integrated radiance was
+4.7% above and its interpolated image L2 difference was 12% relative to the
+finest tested `r4` result. This makes `r3` a pragmatic throughput/quality
+choice for model development, not a claim of full numerical convergence.
+
+The bundled field of view is fixed at `x = +/-15 mm` and `z = 0--32 mm`, which
+contains the tested Cu plume through approximately 5 microseconds. Change and
+version those bounds for a different time window, material, or camera view;
+do not infer them from frame zero. Keep one physics configuration, field of
+view, and physical time grid across all samples in a training dataset.
+
+The 128 line-of-sight cells are internal radiative-transfer quadrature points,
+not a third model dimension. The saved ML tensor remains `(T, 96, 96)` and is
+promoted to `(C, T, 96, 96)` by the dataset.
+
 ## Joint conditional model
 
 The optional PyTorch package also includes one jointly trained conditional

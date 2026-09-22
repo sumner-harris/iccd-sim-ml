@@ -156,7 +156,7 @@ from iccd_sim_ml.models import JointCVAEConfig, JointConditionalVAE
 from iccd_sim_ml.training import JointLossConfig, train_joint_one_epoch
 
 model_config = JointCVAEConfig(
-    video_shape=(1, len(canonical_times_s), 64, 64),
+    video_shape=(1, len(canonical_times_s), 96, 96),
     num_classes=len(class_to_index),
 )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -167,7 +167,7 @@ train_dataset = JointPrecomputedVideoDataset(
     sample_ids=split.train,
     scalers=train_scalers,
     class_to_index=class_to_index,
-    expected_video_shape=(1, len(canonical_times_s), 64, 64),
+    expected_video_shape=(1, len(canonical_times_s), 96, 96),
     expected_times_s=canonical_times_s,
 )
 train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
