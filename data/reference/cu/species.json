@@ -12,13 +12,8 @@
     "1": 20.29239,
     "2": 36.841
   },
-  "momentum_transfer": {
-    "file": "MT_01_01",
-    "cross_section_unit": "bohr2",
-    "outside": "edge"
-  },
   "provenance": {
-    "description": "User-supplied Cu I-IV level tables and electron-neutral momentum-transfer data",
+    "description": "User-supplied Cu I-IV level tables; electron-neutral opacity uses the catalog-wide fixed Q",
     "nist_asd_doi": "10.18434/T4W30F"
   }
 }

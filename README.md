@@ -92,8 +92,9 @@ uv run iccd-sim atomic-status --atomic-reference data\reference
 
 The target catalog contains Al, As, B, Be, Bi, C, Ca, Co, Cs, Cu, Fe, Ge,
 Ho, In, Mg, Mo, Na, Nb, Ni, P, Pr, Pt, Rb, Sb, Sc, Se, Si, Sm, Sr, Ta, Te,
-Ti, Tm, V, W, Zn, and Zr. Strict mode is the production default and refuses
-an enabled opacity component when its element-specific inputs are absent.
+Ti, Tm, V, W, Zn, and Zr. Every element uses the declared fixed
+`Q = 1e-40 cm^5` (`1e-50 m^5` internally) electron-neutral model. Strict mode is the production default
+and refuses incomplete element-specific photoionization inputs.
 `--atomic-mode approximate` is available only for explicitly labeled
 sensitivity and software tests. See [atomic-data.md](docs/atomic-data.md).
 

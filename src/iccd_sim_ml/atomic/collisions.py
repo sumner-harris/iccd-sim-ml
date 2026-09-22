@@ -1,10 +1,9 @@
-"""Electron--neutral momentum-transfer data and Maxwellian collision averages.
+"""Optional electron--neutral momentum-transfer reference calculations.
 
-The electron--neutral inverse-bremsstrahlung model uses the energy-dependent
-momentum-transfer cross section tabulated in the ``MT_01_01`` reference file.
-The Maxwellian integral is evaluated with Gauss--Laguerre quadrature after the
-change of variable ``x = E / (k_B T)``.  This avoids an expensive adaptive
-integral at every temperature, wavelength, and image voxel.
+These utilities reproduce the energy-dependent calculation explored with the
+Cu ``MT_01_01`` table. The production image catalog instead uses the declared
+project-wide fixed-Q assumption for every element. The Maxwellian integral
+here is retained for notebook reproduction and sensitivity studies.
 """
 
 from __future__ import annotations

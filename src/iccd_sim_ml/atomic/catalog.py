@@ -8,16 +8,20 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from .collisions import MomentumTransferTable, load_momentum_transfer_table
+from .collisions import MomentumTransferTable
 from .levels import load_energy_levels
 from .species import AtomicSpecies
 
 AtomicMode = Literal["strict", "approximate"]
 
-# This is the element-independent constant used by the original plume solver:
-# Q = 1e-40 cm^5, converted to 1e-50 m^5 after its density and opacity units
-# are converted to SI. It is retained only as an explicitly labeled fallback.
-LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5 = 1.0e-50
+# Project-wide electron--neutral inverse-bremsstrahlung assumption. The source
+# convention is cgs; the opacity implementation converts it to SI exactly once.
+FIXED_ELECTRON_NEUTRAL_Q_CM5 = 1.0e-40
+CM5_TO_M5 = 1.0e-10
+FIXED_ELECTRON_NEUTRAL_Q_M5 = FIXED_ELECTRON_NEUTRAL_Q_CM5 * CM5_TO_M5
+# Kept as a public alias for callers written before the fixed-Q policy was
+# adopted. Both names refer to the same active model constant.
+LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5 = FIXED_ELECTRON_NEUTRAL_Q_M5
 REQUIRED_PHOTOIONIZATION_CHARGE_STATES = (0, 1, 2)
 
 
@@ -85,9 +89,16 @@ class AtomicReference:
             files[path.name] = f"sha256:{_sha256(path)}"
         if self.descriptor_path is not None:
             files[self.descriptor_path.name] = f"sha256:{_sha256(self.descriptor_path)}"
+        electron_neutral = None
+        if self.electron_neutral_constant_m5 is not None:
+            electron_neutral = {
+                "Q_cm5": self.electron_neutral_constant_m5 / CM5_TO_M5,
+                "Q_m5": self.electron_neutral_constant_m5,
+            }
         return {
             "symbol": self.species.symbol,
             "status": self.status.to_dict(),
+            "electron_neutral_fixed_Q": electron_neutral,
             "descriptor": self.descriptor,
             "files": files,
         }
@@ -100,16 +111,23 @@ class AtomicDataCatalog:
     """Resolve per-element atomic bundles from a versioned reference root.
 
     The root may be the catalog directory containing ``catalog.json`` or one
-    element directory containing ``species.json``. Strict mode fails whenever
-    an enabled physical component lacks required data. Approximate mode uses
-    the original solver's constant electron-neutral kernel and sets unavailable
-    photoionization charge states to zero, while recording both choices.
+    element directory containing ``species.json``. Every element uses the
+    project-wide fixed electron-neutral kernel. Strict mode fails whenever
+    enabled photoionization lacks required element data. Approximate mode sets
+    unavailable photoionization charge states to zero and records that choice.
     """
 
     def __init__(self, root: str | Path):
         self.root = Path(root).expanduser().resolve()
         self.catalog_path = self.root / "catalog.json"
         self.catalog = self._read_json(self.catalog_path) if self.catalog_path.is_file() else {}
+        fixed_q_cm5 = float(
+            self.catalog.get("electron_neutral_fixed_Q_cm5", FIXED_ELECTRON_NEUTRAL_Q_CM5)
+        )
+        if not 0.0 < fixed_q_cm5 < float("inf"):
+            raise ValueError("electron_neutral_fixed_Q_cm5 must be finite and positive")
+        self.electron_neutral_fixed_q_cm5 = fixed_q_cm5
+        self.electron_neutral_fixed_q_m5 = fixed_q_cm5 * CM5_TO_M5
 
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:
@@ -148,11 +166,11 @@ class AtomicDataCatalog:
             raise ValueError("mode must be 'strict' or 'approximate'")
         descriptor_path = self._descriptor_path(symbol)
         if descriptor_path is None:
-            if mode == "strict" and (require_electron_neutral or require_photoionization):
+            if mode == "strict" and require_photoionization:
                 raise AtomicDataUnavailableError(
-                    f"No atomic species bundle is registered for {symbol}. Use approximate mode "
-                    "only for a labeled sensitivity run, or add species.json, level tables, "
-                    "ionization energies, and momentum-transfer data."
+                    f"No atomic species bundle is registered for {symbol}. Add species.json, "
+                    "level tables, and ionization energies, or use approximate mode for a "
+                    "labeled run with missing photoionization."
                 )
             return self._approximate_reference(
                 symbol,
@@ -187,29 +205,13 @@ class AtomicDataCatalog:
         electron_neutral_model = "disabled"
         missing: list[str] = []
         warnings: list[str] = []
-        mt_config = descriptor.get("momentum_transfer")
-        if require_electron_neutral and mt_config:
-            mt_path = (base / str(mt_config["file"])).resolve()
-            if not mt_path.is_file():
-                raise FileNotFoundError(f"Missing momentum-transfer table for {symbol}: {mt_path}")
-            momentum = load_momentum_transfer_table(
-                mt_path,
-                cross_section_unit=str(mt_config.get("cross_section_unit", "bohr2")),
-                outside=str(mt_config.get("outside", "edge")),
-            )
-            referenced.append(mt_path)
-            electron_neutral_model = "element_specific_momentum_transfer"
-        elif require_electron_neutral:
-            missing.append("electron_neutral_momentum_transfer")
-            if mode == "strict":
-                raise AtomicDataUnavailableError(
-                    f"{symbol} lacks an electron-neutral momentum-transfer table"
-                )
-            constant_q = LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5
-            electron_neutral_model = "legacy_constant_Q_approximation"
+        if require_electron_neutral:
+            constant_q = self.electron_neutral_fixed_q_m5
+            electron_neutral_model = "project_fixed_Q"
             warnings.append(
-                "electron-neutral inverse bremsstrahlung uses the original solver's "
-                "element-independent Q=1e-50 m^5 approximation"
+                "electron-neutral inverse bremsstrahlung uses the declared project-wide "
+                f"fixed Q={self.electron_neutral_fixed_q_cm5:.6g} cm^5 "
+                f"({constant_q:.6g} m^5) for every element"
             )
 
         charges = species.photoionization_charge_states()
@@ -217,9 +219,7 @@ class AtomicDataCatalog:
             charge for charge in REQUIRED_PHOTOIONIZATION_CHARGE_STATES if charge not in charges
         )
         if require_photoionization and missing_charges:
-            missing.append(
-                "photoionization_charge_states:" + ",".join(map(str, missing_charges))
-            )
+            missing.append("photoionization_charge_states:" + ",".join(map(str, missing_charges)))
             if mode == "strict":
                 raise AtomicDataUnavailableError(
                     f"{symbol} lacks complete level/ionization data for photoionization "
@@ -231,9 +231,7 @@ class AtomicDataCatalog:
                 f"{missing_charges}; available states remain element specific"
             )
 
-        fidelity = (
-            "element_specific_continuum" if not missing else "approximate_incomplete_continuum"
-        )
+        fidelity = "fixed_Q_continuum" if not missing else "approximate_incomplete_continuum"
         status = AtomicDataStatus(
             symbol=symbol,
             mode=mode,
@@ -268,12 +266,12 @@ class AtomicDataCatalog:
         constant_q = None
         electron_neutral_model = "disabled"
         if require_electron_neutral:
-            missing.append("electron_neutral_momentum_transfer")
-            constant_q = LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5
-            electron_neutral_model = "legacy_constant_Q_approximation"
+            constant_q = self.electron_neutral_fixed_q_m5
+            electron_neutral_model = "project_fixed_Q"
             warnings.append(
-                "electron-neutral inverse bremsstrahlung uses the original solver's "
-                "element-independent Q=1e-50 m^5 approximation"
+                "electron-neutral inverse bremsstrahlung uses the declared project-wide "
+                f"fixed Q={self.electron_neutral_fixed_q_cm5:.6g} cm^5 "
+                f"({constant_q:.6g} m^5) for every element"
             )
         if require_photoionization:
             missing.append("photoionization_charge_states:0,1,2")
@@ -288,7 +286,7 @@ class AtomicDataCatalog:
             photoionization_charge_states=(),
             missing_components=tuple(missing),
             warnings=tuple(warnings),
-            fidelity="approximate_incomplete_continuum",
+            fidelity=("approximate_incomplete_continuum" if missing else "fixed_Q_continuum"),
         )
         return AtomicReference(
             species=species,
@@ -307,6 +305,8 @@ __all__ = [
     "AtomicDataUnavailableError",
     "AtomicMode",
     "AtomicReference",
+    "FIXED_ELECTRON_NEUTRAL_Q_CM5",
+    "FIXED_ELECTRON_NEUTRAL_Q_M5",
     "LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5",
     "REQUIRED_PHOTOIONIZATION_CHARGE_STATES",
     "normalize_element_symbol",

@@ -6,7 +6,8 @@ from pathlib import Path
 import numpy as np
 
 from iccd_sim_ml.atomic.catalog import (
-    LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5,
+    FIXED_ELECTRON_NEUTRAL_Q_CM5,
+    FIXED_ELECTRON_NEUTRAL_Q_M5,
     AtomicDataCatalog,
     AtomicDataUnavailableError,
 )
@@ -238,10 +239,10 @@ class ContinuumOpacityModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.model.components(0.0, 10_000.0, 1.0, 1.0, 1.0, 1.0)
 
-    def test_constant_electron_neutral_fallback_matches_legacy_si_formula(self) -> None:
+    def test_fixed_electron_neutral_kernel_matches_si_formula(self) -> None:
         model = ContinuumOpacityModel.from_constant_electron_neutral(
             AtomicSpecies("Fe", {}, {}),
-            LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5,
+            FIXED_ELECTRON_NEUTRAL_Q_M5,
         )
         wavelength = 500.0e-9
         temperature = 20_000.0
@@ -250,7 +251,7 @@ class ContinuumOpacityModelTests(unittest.TestCase):
         result = model.components(wavelength, temperature, n0, ne, 0.0, 0.0)
         expected = (
             float(stimulated_emission_factor(wavelength, temperature))
-            * LEGACY_CONSTANT_ELECTRON_NEUTRAL_Q_M5
+            * FIXED_ELECTRON_NEUTRAL_Q_M5
             * ne
             * n0
         )
@@ -263,13 +264,25 @@ class AtomicCatalogTests(unittest.TestCase):
         root = Path(__file__).parents[1] / "data" / "reference"
         reference = AtomicDataCatalog(root).load("cu", mode="strict")
         self.assertEqual(reference.species.symbol, "Cu")
-        self.assertEqual(reference.status.fidelity, "element_specific_continuum")
+        self.assertEqual(reference.status.fidelity, "fixed_Q_continuum")
         self.assertEqual(reference.status.photoionization_charge_states, (0, 1, 2))
         self.assertEqual(reference.status.missing_components, ())
-        self.assertIsNotNone(reference.momentum_transfer)
+        self.assertIsNone(reference.momentum_transfer)
+        self.assertEqual(
+            reference.electron_neutral_constant_m5,
+            FIXED_ELECTRON_NEUTRAL_Q_M5,
+        )
+        self.assertEqual(reference.status.electron_neutral_model, "project_fixed_Q")
         fingerprint = reference.fingerprint()
         self.assertIn("species.json", fingerprint["files"])
-        self.assertIn("MT_01_01", fingerprint["files"])
+        self.assertNotIn("MT_01_01", fingerprint["files"])
+        self.assertEqual(
+            fingerprint["electron_neutral_fixed_Q"],
+            {
+                "Q_cm5": FIXED_ELECTRON_NEUTRAL_Q_CM5,
+                "Q_m5": FIXED_ELECTRON_NEUTRAL_Q_M5,
+            },
+        )
 
     def test_missing_element_fails_strict_and_is_explicit_in_approximate_mode(self) -> None:
         root = Path(__file__).parents[1] / "data" / "reference"
@@ -281,14 +294,24 @@ class AtomicCatalogTests(unittest.TestCase):
         self.assertEqual(reference.status.fidelity, "approximate_incomplete_continuum")
         self.assertEqual(
             reference.status.electron_neutral_model,
-            "legacy_constant_Q_approximation",
+            "project_fixed_Q",
         )
-        self.assertIn("electron_neutral_momentum_transfer", reference.status.missing_components)
         self.assertIn(
             "photoionization_charge_states:0,1,2",
             reference.status.missing_components,
         )
         self.assertEqual(reference.build_opacity_model().species.symbol, "Fe")
+
+    def test_fixed_q_does_not_require_an_element_bundle_when_photoionization_is_off(self) -> None:
+        root = Path(__file__).parents[1] / "data" / "reference"
+        reference = AtomicDataCatalog(root).load(
+            "As",
+            mode="strict",
+            require_photoionization=False,
+        )
+        self.assertEqual(reference.status.fidelity, "fixed_Q_continuum")
+        self.assertEqual(reference.status.missing_components, ())
+        self.assertEqual(reference.status.electron_neutral_model, "project_fixed_Q")
 
 
 if __name__ == "__main__":

@@ -332,7 +332,7 @@ class ContinuumOpacityModel:
         *,
         chunk_size: int = 65_536,
     ) -> ContinuumOpacityModel:
-        """Build an explicitly approximate constant-Q electron-neutral model."""
+        """Build a declared constant-Q electron-neutral model."""
 
         return cls(
             species=species,

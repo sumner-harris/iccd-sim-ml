@@ -58,8 +58,9 @@ forward model.
 Do not combine proxy images with continuum-radiance images in a scientific
 dataset. `--cache-backend continuum` constructs versioned radiance NPZs
 directly. It uses a common physical-time grid, simulates the bracketing source
-frames, interpolates in photon radiance, and refuses extrapolation. Strict
-atomic mode is required for production; approximate mode is labeled and is
+frames, interpolates in photon radiance, and refuses extrapolation. Both modes
+use the documented fixed-Q electron-neutral model. Strict atomic mode is
+required for production photoionization; approximate mode is labeled and is
 intended only for integration and sensitivity studies. The downstream
 datasets, splits, models, training loops, and reports use the same NPZ array
 contract for both backends.

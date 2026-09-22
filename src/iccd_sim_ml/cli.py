@@ -309,8 +309,8 @@ def _add_simulation_arguments(parser: argparse.ArgumentParser) -> None:
         choices=("strict", "approximate"),
         default="strict",
         help=(
-            "strict requires element-specific atomic inputs; approximate uses the original "
-            "constant-Q neutral model and zero unavailable photoionization"
+            "all elements use the catalog's fixed-Q neutral model; strict requires complete "
+            "photoionization inputs, while approximate zeros unavailable charge states"
         ),
     )
     parser.add_argument("--output", type=Path, required=True)

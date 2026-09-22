@@ -5,20 +5,23 @@
 The HDF5 files already contain the generic plasma state needed by the
 continuum model: temperature and neutral, electron, singly ionized, and
 doubly ionized number densities. The first implementation was nevertheless
-copper-only because it constructed every opacity lookup from three Cu-specific
+copper-only because it constructed every opacity lookup from Cu-specific
 inputs embedded directly in the code and repository:
 
 1. Cu I--IV energy-level tables for LTE partition functions;
-2. Cu I--III ionization energies for bound-free thresholds; and
-3. a Cu electron--neutral momentum-transfer cross-section table.
+2. Cu I--III ionization energies for bound-free thresholds.
 
 Electron--ion inverse bremsstrahlung is already element-independent for the
 available charge states: it depends on `ne * (n1 + 4*n2)`, temperature, and
-wavelength. Electron--neutral inverse bremsstrahlung depends on the target
-atom's electron-scattering cross section. Photoionization depends on the
-element's thresholds and level structure. Reusing Cu inputs for another
-element would therefore produce plausible-looking but incorrectly labeled
-images.
+wavelength. Photoionization depends on the element's thresholds and level
+structure. Reusing Cu photoionization inputs for another element would
+therefore produce plausible-looking but incorrectly labeled images.
+
+Species-specific electron--neutral momentum-transfer tables are not available
+for the target set. By project decision, every element therefore uses the same
+declared `Q = 1e-40 cm^5` kernel (`1e-50 m^5` in SI). The stimulated-emission factor still makes
+the resulting electron--neutral coefficient depend on temperature and
+wavelength, but the underlying `Q` is fixed and element independent.
 
 ## Catalog and target set
 
@@ -62,24 +65,16 @@ this structure:
     "1": 2.0,
     "2": 3.0
   },
-  "momentum_transfer": {
-    "file": "electron_neutral_mt.txt",
-    "cross_section_unit": "m2",
-    "outside": "edge"
-  },
   "provenance": {
     "level_source": "citation and export settings",
-    "ionization_source": "citation and database version",
-    "momentum_transfer_source": "citation"
+    "ionization_source": "citation and database version"
   }
 }
 ```
 
 The example energies are placeholders, not physical values. Compact level
 files contain `g energy_eV`; tab-delimited NIST level exports with `g` and
-`Level (eV)` columns are also accepted. Momentum-transfer files contain a
-header followed by electron energy in eV and cross section in either square
-metres or square Bohr radii, as declared in the descriptor.
+`Level (eV)` columns are also accepted.
 
 For `n0`, `n1`, and `n2` all to contribute to photoionization, levels are
 needed for charges 0--3 and thresholds for charges 0--2. A partial adjacent
@@ -98,22 +93,22 @@ Authoritative inputs should be exported from the
 and
 [NIST ASD ionization-energy form](https://physics.nist.gov/PhysRefData/ASD/ionEnergy.html),
 with the database version, query settings, retrieval date, and source DOI
-`10.18434/T4W30F` recorded in each descriptor. Electron-neutral momentum-
-transfer cross sections are a separate collision-data requirement and are not
-provided by the ASD line or level tables.
+`10.18434/T4W30F` recorded in each descriptor.
 
 ## Strict versus approximate execution
 
 Strict mode is the production default. It fails before image formation when
-an enabled component lacks required element data. This prevents a cache from
-quietly mixing Cu-quality images with lower-fidelity images.
+enabled photoionization lacks level or ionization-threshold data for any of
+the `n0`, `n1`, or `n2` charge states. This prevents a cache from quietly
+mixing complete and incomplete bound-free models. The fixed-Q
+electron--neutral assumption is used in both strict and approximate modes.
 
 Approximate mode exists for software integration and sensitivity studies. For
 an element without a bundle it:
 
 - retains the generic electron--ion Kramers term with Gaunt factor one;
-- uses the original solver's element-independent electron--neutral
-  `Q = 1e-50 m^5` approximation; and
+- uses the same project-wide electron--neutral `Q = 1e-40 cm^5`
+  (`1e-50 m^5` internally); and
 - sets unavailable photoionization contributions to zero.
 
 Every such NPZ is labeled `approximate_incomplete_continuum`. Its missing
