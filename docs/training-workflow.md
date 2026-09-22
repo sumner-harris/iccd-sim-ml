@@ -102,3 +102,23 @@ output-dir/
 Metrics from a smoke run verify execution only. Use an untouched test split,
 more simulations, production radiance, convergence-qualified image settings,
 and repeated seeds before interpreting model accuracy.
+
+## Production-cache pilot
+
+Run `scripts/run_production_cache_pilot.py` before a full continuum cache. It
+selects one deterministic interior simulation per requested element and uses
+the balanced r3 profile: 48 wavelengths, a 96 x 96 image, 128 line-of-sight
+cells, and a 160-point temperature lookup. Its output includes a portable
+manifest, one immutable NPZ per element, a per-element progress ledger, CSV
+and JSON quality reports, and headless diagnostic plots.
+
+An exactly zero image is retained. The report separately flags an all-zero
+video, source windows with no charged plasma, and source windows whose maximum
+temperature remains below the recorded boiling point. Sparse atomic coverage
+is also a flag, not a filter. The default threshold is fewer than 10 canonical
+levels in any required photoionization charge state; change it only by an
+explicit command-line option and record that choice.
+
+The progress ledger is written atomically after every completed element. A
+restarted command validates existing cache fingerprints and reuses valid
+products, making it suitable for a detached cluster or remote-host job.

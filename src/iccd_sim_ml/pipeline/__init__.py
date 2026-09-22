@@ -16,6 +16,13 @@ from .cache import (
     ensure_continuum_cache,
     ensure_proxy_cache,
 )
+from .quality import (
+    PlasmaWindowQuality,
+    RadianceQuality,
+    sparse_level_stages,
+    summarize_plasma_window,
+    summarize_radiance,
+)
 
 _LAZY_EXPORTS = {
     "TrainingRunConfig": (".experiments", "TrainingRunConfig"),
@@ -32,6 +39,8 @@ __all__ = [
     "CacheResult",
     "ContinuumCacheConfig",
     "ProxyCacheConfig",
+    "PlasmaWindowQuality",
+    "RadianceQuality",
     "SourceSample",
     "TrainingRunConfig",
     "discover_balanced_subset",
@@ -42,6 +51,9 @@ __all__ = [
     "run_experiment",
     "run_joint_cvae_experiment",
     "run_regression_experiment",
+    "sparse_level_stages",
+    "summarize_plasma_window",
+    "summarize_radiance",
 ]
 
 

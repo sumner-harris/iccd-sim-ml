@@ -212,16 +212,16 @@ python scripts/run_training_pipeline.py \
 The multi-element smoke cache backend creates a deterministic projection of
 plasma temperature and charge density. It is explicitly labeled
 `pipeline_smoke_test_only` and must not be interpreted as ICCD radiance. Its
-purpose is to exercise the complete software and GPU workflow while atomic
-continuum inputs are currently available only for Cu. Scientific training
-should use cached products from the validated continuum simulator, extended
-with element-specific atomic data, without changing the downstream experiment
-and report modules. See
+purpose is to exercise the complete software and GPU workflow quickly.
+Scientific training should use cached products from the validated continuum
+simulator and the per-element NIST reference catalog without changing the
+downstream experiment and report modules. See
 [`docs/training-workflow.md`](docs/training-workflow.md) for the module
 boundaries and artifact layout.
 
 For a physical continuum-radiance cache, select the `continuum` backend. This
-strict example uses Cu until additional complete element bundles are added:
+strict example uses Cu, but `--elements` accepts any elements registered in
+`data/reference/catalog.json`:
 
 ```bash
 python scripts/run_training_pipeline.py \
@@ -245,11 +245,28 @@ grid, linearly interpolates photon radiance onto that grid, refuses temporal
 extrapolation, and fingerprints the atomic inputs and fidelity in every
 product.
 
+Before committing to a full cache, run one resumable r3 pilot per element:
+
+```bash
+python scripts/run_production_cache_pilot.py \
+  --data-dir /path/to/plasma_sim_data \
+  --atomic-reference data/reference \
+  --cache-dir work/r3-pilot-cache \
+  --output-dir work/r3-pilot-report
+```
+
+The pilot keeps zero/no-ablation samples and flags them instead of discarding
+them. It reports positive-radiance quantiles, exact-zero pixel and frame
+fractions, plasma-state checks, I-IV level counts, sparse NIST stages, and
+per-element runtime/storage extrapolations. Progress is committed after each
+element, so the command is safe to resume after interruption; valid NPZ files
+are cache hits.
+
 ## Repository map
 
 ```text
 configs/                 versioned simulator settings
-data/reference/          element catalog; Cu currently has a complete bundle
+data/reference/          versioned per-element NIST level/ionization catalog
 data/processed/          generated videos/manifests (ignored by git)
 docs/                    physics, HDF5, and validation notes
 legacy/                  original exploratory Python source
