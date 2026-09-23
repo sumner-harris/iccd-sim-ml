@@ -1,4 +1,4 @@
-"""Cache one r3 continuum video per element and produce a quality/scale report."""
+"""Cache one production-profile continuum video per element and report quality."""
 
 from __future__ import annotations
 
@@ -40,6 +40,7 @@ from iccd_sim_ml.pipeline.quality import (  # noqa: E402
 )
 
 SPECTROSCOPIC_STAGES = ("I", "II", "III", "IV")
+DEFAULT_PRODUCTION_IMAGING_CONFIG = REPOSITORY_ROOT / "configs" / "continuum_ml_typical_8us.json"
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -61,10 +62,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--atomic-reference", type=Path, required=True)
+    parser.add_argument("--imaging-config", type=Path, default=DEFAULT_PRODUCTION_IMAGING_CONFIG)
     parser.add_argument("--elements", nargs="+")
     parser.add_argument("--frames", type=int, default=16)
     parser.add_argument("--start-ns", type=float, default=0.0)
-    parser.add_argument("--stop-ns", type=float, default=5000.0)
+    parser.add_argument("--stop-ns", type=float, default=8000.0)
     parser.add_argument("--sparse-level-threshold", type=int, default=10)
     parser.add_argument("--workers", type=int, default=4)
     return parser.parse_args()
@@ -101,7 +103,7 @@ def _plots(rows: list[dict[str, Any]], output_dir: Path, *, sparse_level_thresho
     axis.bar(positions, visible)
     axis.set_yscale("log")
     axis.set_xticks(positions, symbols, rotation=90)
-    axis.set(ylabel="peak photon radiance", title="r3 pilot peak radiance by element")
+    axis.set(ylabel="peak photon radiance", title="production pilot peak radiance by element")
     axis.grid(axis="y", alpha=0.25)
     figure.savefig(output_dir / "peak_radiance_by_element.png", dpi=180)
     plt.close(figure)
@@ -112,7 +114,7 @@ def _plots(rows: list[dict[str, Any]], output_dir: Path, *, sparse_level_thresho
     axis.set(
         ylabel="fraction of exactly zero frames",
         ylim=(0.0, 1.0),
-        title="r3 pilot non-emissive frame fraction",
+        title="production pilot non-emissive frame fraction",
     )
     axis.grid(axis="y", alpha=0.25)
     figure.savefig(output_dir / "non_emissive_frame_fraction.png", dpi=180)
@@ -176,17 +178,7 @@ def main() -> int:
         raise ValueError("--workers must be positive")
     catalog = AtomicDataCatalog(args.atomic_reference)
     elements = tuple(args.elements or catalog.target_elements)
-    imaging = ImagingConfig(
-        wavelength_min_nm=300.0,
-        wavelength_max_nm=800.0,
-        wavelength_points=48,
-        radial_points=96,
-        axial_points=96,
-        line_of_sight_points=128,
-        temperature_table_points=160,
-        radial_max_m=0.015,
-        axial_max_m=0.032,
-    )
+    imaging = ImagingConfig.from_json(args.imaging_config)
     cache_config = ContinuumCacheConfig(
         imaging=imaging,
         frame_times_s=tuple(

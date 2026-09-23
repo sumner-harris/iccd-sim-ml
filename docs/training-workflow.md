@@ -107,8 +107,9 @@ and repeated seeds before interpreting model accuracy.
 
 Run `scripts/run_production_cache_pilot.py` before a full continuum cache. It
 selects one deterministic interior simulation per requested element and uses
-the balanced r3 profile: 48 wavelengths, a 96 x 96 image, 128 line-of-sight
-cells, and a 160-point temperature lookup. Its output includes a portable
+the production profile: 0--8 microseconds, 48 wavelengths, a 256 x 256 image,
+`x=+/-55 mm`, `z=0--125 mm`, 128 line-of-sight cells, and a 160-point
+temperature lookup. Its output includes a portable
 manifest, one immutable NPZ per element, a per-element progress ledger, CSV
 and JSON quality reports, and headless diagnostic plots.
 
