@@ -115,7 +115,7 @@ and copper visible emission is often line dominated.
   profile (64 wavelengths, 128 x 128, 192 LOS). It is therefore a deliberate
   cost/quality compromise for dataset generation, not a converged reference.
 - Production ML caches retain the same 48-wavelength and 128-LOS settings but
-  save 256 x 256 frames over `x=+/-55 mm`, `z=0--125 mm`, and 0--8
+  save 128 x 128 frames over `x=+/-55 mm`, `z=0--125 mm`, and 0--8
   microseconds. The 128 LOS cells exist only during ray integration and do not
   add a dimension to the saved video.
 - Lookup queries outside the configured temperature range are clipped to the

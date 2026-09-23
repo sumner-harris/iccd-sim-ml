@@ -37,11 +37,11 @@ def _frame() -> np.ndarray:
 def test_versioned_production_imaging_profile() -> None:
     repository = Path(__file__).resolve().parents[1]
     config = ImagingConfig.from_json(repository / "configs" / "continuum_ml_typical_8us.json")
-    assert (config.radial_points, config.axial_points) == (256, 256)
+    assert (config.radial_points, config.axial_points) == (128, 128)
     assert config.radial_max_m == pytest.approx(0.055)
     assert config.axial_max_m == pytest.approx(0.125)
-    assert 2.0 * config.radial_max_m / (config.radial_points - 1) == pytest.approx(0.431372549e-3)
-    assert config.axial_max_m / (config.axial_points - 1) == pytest.approx(0.490196078e-3)
+    assert 2.0 * config.radial_max_m / (config.radial_points - 1) == pytest.approx(0.866141732e-3)
+    assert config.axial_max_m / (config.axial_points - 1) == pytest.approx(0.984251969e-3)
 
 
 def _tiny_h5(path: Path, *, element: str = "Cu") -> None:

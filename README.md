@@ -172,25 +172,27 @@ microseconds is unavailable for Fe and Tm. Eight microseconds is the longest
 common target in the current files.
 
 The selected production profile uses the all-element 8-microsecond window at
-256 x 256. Its physical pixel pitches are 0.431 mm horizontally and 0.490 mm
-axially. The longer-time configurations remain lower-resolution survey
-alternatives rather than production defaults:
+128 x 128. Its physical pixel pitches are 0.866 mm horizontally and 0.984 mm
+axially. This reduces the estimated full-cache runtime from roughly 15--20
+days at 256 x 256 to roughly 4--6 days with 16 CPU workers. The longer-time
+configurations remain lower-resolution survey alternatives rather than
+production defaults:
 
 | target | field of view | x pitch | z pitch | source coverage |
 |---|---:|---:|---:|---:|
-| 8 microseconds | `x=+/-55 mm`, `z=0--125 mm` | 0.431 mm | 0.490 mm | 37/37 |
+| 8 microseconds | `x=+/-55 mm`, `z=0--125 mm` | 0.866 mm | 0.984 mm | 37/37 |
 | 10 microseconds | `x=+/-60 mm`, `z=0--145 mm` | 1.26 mm | 1.53 mm | 35/37 |
 | 20 microseconds | `x=+/-75 mm`, `z=0--185 mm` | 1.58 mm | 1.95 mm | 29/37 |
 
-Use the 8-microsecond, 256 x 256 profile when one canonical all-element
+Use the 8-microsecond, 128 x 128 profile when one canonical all-element
 production dataset is required. With the default 16-frame time grid, frames
 are uniformly placed from 0 through 8 microseconds. Use the longer profiles
 only for explicitly coverage-filtered experiments, and retain the morphology
 flags rather than silently discarding anomalous source simulations.
 
 The 128 line-of-sight cells are internal radiative-transfer quadrature points,
-not a third model dimension. The production ML tensor is `(T, 256, 256)` and
-is promoted to `(C, T, 256, 256)` by the dataset. The earlier 96 x 96 r3
+not a third model dimension. The production ML tensor is `(T, 128, 128)` and
+is promoted to `(C, T, 128, 128)` by the dataset. The earlier 96 x 96 r3
 profile remains useful for convergence studies and inexpensive pilots.
 
 ## Joint conditional model
@@ -269,7 +271,7 @@ python scripts/run_training_pipeline.py \
   --atomic-reference data/reference \
   --atomic-mode strict \
   --frames 16 --start-ns 0 --stop-ns 8000 \
-  --image-width 256 --image-height 256 \
+  --image-width 128 --image-height 128 \
   --radial-max-mm 55 --axial-max-mm 125 \
   --cache-dir work/continuum-cache \
   --output-dir work/reports \
@@ -279,7 +281,7 @@ python scripts/run_training_pipeline.py \
 ```
 
 The continuum backend defaults to the production 0--8 microsecond,
-256 x 256, `x=+/-55 mm`, `z=0--125 mm` profile. It retains the r3 spectral and
+128 x 128, `x=+/-55 mm`, `z=0--125 mm` profile. It retains the r3 spectral and
 LOS settings: 48 wavelengths and 128 LOS points. It simulates source frames
 bracketing a shared physical-time grid, linearly interpolates photon radiance
 onto that grid, refuses temporal extrapolation, and fingerprints the atomic

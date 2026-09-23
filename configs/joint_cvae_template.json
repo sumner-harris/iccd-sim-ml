@@ -1,5 +1,5 @@
 {
-  "video_shape": [1, 16, 256, 256],
+  "video_shape": [1, 16, 128, 128],
   "encoder": {
     "input_channels": 1,
     "stage_channels": [32, 64, 128, 256],

@@ -20,5 +20,11 @@ __pycache__/
 build/
 dist/
 outputs/
+work/
+cache/
+*-cache/
+*.npz
+*.h5
+*.hdf5
 data/processed/*
 !data/processed/.gitkeep

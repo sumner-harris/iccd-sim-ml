@@ -46,12 +46,12 @@ store an explicit validity mask and use it in every reconstruction metric and
 loss. Any clipping, interpolation method, or extrapolation policy is part of
 the data specification and must be identical across partitions.
 
-For the production ML dataset, use 48 wavelengths, 256 x 256 saved images,
+For the production ML dataset, use 48 wavelengths, 128 x 128 saved images,
 and 128 line-of-sight quadrature cells. The LOS count affects image formation
 but is not part of the tensor shape. The resulting unbatched tensor is
-`(C,T,H,W) = (1,T,256,256)`. Treat this as a versioned dataset choice: do not
-mix the 96 x 96 survey products with 256 x 256 production simulations unless
-an explicit, identical resampling step produces the canonical 256 x 256 grid.
+`(C,T,H,W) = (1,T,128,128)`. Treat this as a versioned dataset choice: do not
+mix the 96 x 96 survey products with 128 x 128 production simulations unless
+an explicit, identical resampling step produces the canonical 128 x 128 grid.
 
 The supplied balanced Cu configuration uses a fixed `x = +/-15 mm`,
 `z = 0--32 mm` field of view selected for the approximately 0--5 microsecond
@@ -62,9 +62,9 @@ do not represent the same measurement.
 For longer all-element sequences, use radiance-containment population
 statistics rather than the maximum hot-cell coordinate. The current files
 share coverage only through 8 microseconds; the corresponding typical-plume
-configuration is `configs/continuum_ml_typical_8us.json` with 256 x 256 pixels,
-`x = +/-55 mm`, and `z = 0--125 mm`. This corresponds to 0.431 mm horizontal
-and 0.490 mm axial pitch. The canonical 16-frame grid spans 0--8 microseconds.
+configuration is `configs/continuum_ml_typical_8us.json` with 128 x 128 pixels,
+`x = +/-55 mm`, and `z = 0--125 mm`. This corresponds to 0.866 mm horizontal
+and 0.984 mm axial pitch. The canonical 16-frame grid spans 0--8 microseconds.
 The 10- and 20-microsecond variants are
 coverage-filtered alternatives. Their source-coverage counts are 35/37 and
 29/37, respectively. Slab-like and field-filling simulations are retained
