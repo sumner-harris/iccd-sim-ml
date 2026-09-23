@@ -303,6 +303,25 @@ per-element runtime/storage extrapolations. Progress is committed after each
 element, so the command is safe to resume after interruption; valid NPZ files
 are cache hits.
 
+After reviewing the pilot, cache every simulation that covers the complete
+canonical 0--8 microsecond grid with the resumable full-cache runner:
+
+```bash
+python scripts/run_full_production_cache.py \
+  --data-dir /path/to/plasma_sim_data \
+  --atomic-reference data/reference \
+  --cache-dir /path/to/plasma_sim_data_cache \
+  --workers 16
+```
+
+The runner indexes every simulation group in every registered element file,
+records groups excluded for missing attributes or insufficient time coverage,
+and interleaves elements across workers to reduce contention on any one HDF5
+file. Each sample is independently fingerprinted and written atomically. A
+restart revalidates existing products, while `progress.json`,
+`source_inventory.json`, and the final `manifest.json` remain in the cache
+root.
+
 ## Repository map
 
 ```text
