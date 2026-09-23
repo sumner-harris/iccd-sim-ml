@@ -26,6 +26,20 @@ class RadianceExtent:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class RadianceMorphology:
+    """Simple, auditable screening of a rendered late-time image."""
+
+    classification: str
+    eligible_for_typical_fov: bool
+    radial_edge_cropped: bool
+    axial_edge_cropped: bool
+    reasons: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def select_maximum_condition(simulations: Sequence[Any]) -> Any:
     """Select the joint maximum laser power and spot radius deterministically.
 
@@ -156,8 +170,78 @@ def summarize_radiance_extent(
     )
 
 
+def assess_radiance_morphology(
+    extent: RadianceExtent,
+    *,
+    slab_aspect_ratio: float = 1.5,
+    field_filling_fraction: float = 0.9,
+    field_filling_edge_fraction: float = 1.0e-2,
+    cropped_edge_fraction: float = 1.0e-3,
+) -> RadianceMorphology:
+    """Flag slab-like or field-filling emission without calling it a plume.
+
+    This intentionally uses rendered radiance rather than hot-cell or charged-
+    density support. Edge-cropping flags are reported separately: a large but
+    otherwise plume-shaped image remains useful for robust population
+    statistics, while its measured extent is understood to be a lower bound.
+    """
+
+    if slab_aspect_ratio <= 1.0:
+        raise ValueError("slab_aspect_ratio must exceed one")
+    for name, value in (
+        ("field_filling_fraction", field_filling_fraction),
+        ("field_filling_edge_fraction", field_filling_edge_fraction),
+        ("cropped_edge_fraction", cropped_edge_fraction),
+    ):
+        if not 0.0 < value < 1.0:
+            raise ValueError(f"{name} must lie in (0, 1)")
+
+    radial_edge = extent.radial_edge_fraction or 0.0
+    axial_edge = extent.axial_outer_edge_fraction or 0.0
+    radial_cropped = radial_edge >= cropped_edge_fraction
+    axial_cropped = axial_edge >= cropped_edge_fraction
+    reasons: list[str] = []
+    if extent.total_pixel_sum <= 0.0 or extent.peak <= 0.0:
+        classification = "non_emissive"
+        reasons.append("zero integrated radiance")
+    else:
+        radial = extent.radial_containment_m.get("99.9%")
+        axial = extent.axial_containment_m.get("99.9%")
+        field_filling = (
+            extent.nonzero_pixel_fraction >= field_filling_fraction
+            and max(radial_edge, axial_edge) >= field_filling_edge_fraction
+        )
+        slab_like = (
+            radial is not None
+            and axial is not None
+            and axial > 0.0
+            and radial > slab_aspect_ratio * axial
+        )
+        if slab_like:
+            classification = "slab_like"
+            reasons.append("radial 99.9% extent is much larger than axial extent")
+        elif field_filling:
+            classification = "field_filling"
+            reasons.append("radiance fills the diagnostic window and reaches an edge")
+        else:
+            classification = "plume_like"
+    if radial_cropped:
+        reasons.append("radial extent is censored by the survey boundary")
+    if axial_cropped:
+        reasons.append("axial extent is censored by the survey boundary")
+    return RadianceMorphology(
+        classification=classification,
+        eligible_for_typical_fov=classification == "plume_like",
+        radial_edge_cropped=radial_cropped,
+        axial_edge_cropped=axial_cropped,
+        reasons=tuple(reasons),
+    )
+
+
 __all__ = [
+    "RadianceMorphology",
     "RadianceExtent",
+    "assess_radiance_morphology",
     "bracketing_frame_indices",
     "select_maximum_condition",
     "summarize_radiance_extent",

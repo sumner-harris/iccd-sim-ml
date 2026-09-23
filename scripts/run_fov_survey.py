@@ -32,6 +32,7 @@ from iccd_sim_ml.imaging import ImagingConfig, simulate_continuum_image  # noqa:
 from iccd_sim_ml.imaging.grid import infer_dyadic_domain_max  # noqa: E402
 from iccd_sim_ml.io import get_h5_simulation, list_h5_simulations  # noqa: E402
 from iccd_sim_ml.pipeline import (  # noqa: E402
+    assess_radiance_morphology,
     bracketing_frame_indices,
     select_maximum_condition,
     summarize_radiance_extent,
@@ -55,6 +56,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--survey-radial-mm", type=float)
     parser.add_argument("--survey-axial-mm", type=float)
+    parser.add_argument("--maximum-auto-radial-mm", type=float, default=200.0)
+    parser.add_argument("--maximum-auto-axial-mm", type=float, default=200.0)
     parser.add_argument("--margin-fraction", type=float, default=0.10)
     parser.add_argument("--round-up-mm", type=float, default=5.0)
     parser.add_argument("--inspect-only", action="store_true")
@@ -400,6 +403,8 @@ def main() -> int:
     args = _parse_args()
     if args.time_us <= 0.0 or args.workers < 1:
         raise ValueError("--time-us and --workers must be positive")
+    if args.maximum_auto_radial_mm <= 0.0 or args.maximum_auto_axial_mm <= 0.0:
+        raise ValueError("automatic survey limits must be positive")
     if not 0.0 <= args.margin_fraction < 1.0 or args.round_up_mm <= 0.0:
         raise ValueError("Margin must be in [0,1), and round-up increment must be positive")
     output_dir = args.output_dir.expanduser().resolve()
@@ -457,6 +462,7 @@ def main() -> int:
         min(
             _round_up_m(source_radial_support * (1.0 + args.margin_fraction), args.round_up_mm),
             maximum_radial_domain,
+            args.maximum_auto_radial_mm * 1.0e-3,
         )
         if args.survey_radial_mm is None
         else args.survey_radial_mm * 1.0e-3
@@ -465,6 +471,7 @@ def main() -> int:
         min(
             _round_up_m(source_axial_support * (1.0 + args.margin_fraction), args.round_up_mm),
             maximum_axial_domain,
+            args.maximum_auto_axial_mm * 1.0e-3,
         )
         if args.survey_axial_mm is None
         else args.survey_axial_mm * 1.0e-3
@@ -524,12 +531,14 @@ def main() -> int:
         if metadata["request"]["atomic_data"]["symbol"] != inspected_row["element"]:
             raise ValueError(f"Atomic identity mismatch for {inspected_row['element']}")
         extent = summarize_radiance_extent(image, x_m, z_m)
+        morphology = assess_radiance_morphology(extent)
         rows.append(
             {
                 **inspected_row,
                 "runtime_s": rendered["runtime_s"],
                 "cache_status": rendered["cache_status"],
                 "radiance_extent": extent.to_dict(),
+                "radiance_morphology": morphology.to_dict(),
                 "image": image,
                 "x_m": x_m,
                 "z_m": z_m,
@@ -558,6 +567,31 @@ def main() -> int:
         _round_up_m(maximum_axial * (1.0 + args.margin_fraction), args.round_up_mm),
         axial_max,
     )
+    typical_rows = [row for row in rows if row["radiance_morphology"]["eligible_for_typical_fov"]]
+    if not typical_rows:
+        raise RuntimeError("No plume-like images remain after morphology screening")
+
+    def containment_values(axis: str) -> np.ndarray:
+        return np.asarray(
+            [row["radiance_extent"][f"{axis}_containment_m"]["99.9%"] for row in typical_rows],
+            dtype=np.float64,
+        )
+
+    typical_radial = containment_values("radial")
+    typical_axial = containment_values("axial")
+
+    def rounded_quantiles(values: np.ndarray) -> dict[str, float]:
+        return {
+            label: float(np.quantile(values, quantile) * 1.0e3)
+            for label, quantile in (("median", 0.5), ("p75", 0.75), ("p90", 0.9))
+        }
+
+    typical_radial_quantiles = rounded_quantiles(typical_radial)
+    typical_axial_quantiles = rounded_quantiles(typical_axial)
+    average_radial = _round_up_m(float(np.median(typical_radial)) * 1.15, args.round_up_mm)
+    average_axial = _round_up_m(float(np.median(typical_axial)) * 1.15, args.round_up_mm)
+    balanced_radial = _round_up_m(float(np.quantile(typical_radial, 0.75)) * 1.10, args.round_up_mm)
+    balanced_axial = _round_up_m(float(np.quantile(typical_axial, 0.75)) * 1.10, args.round_up_mm)
     radial_pitch = 2.0 * recommended_radial / (config.radial_points - 1)
     axial_pitch = recommended_axial / (config.axial_points - 1)
     baseline_radial_pitch = 2.0 * 0.015 / (config.radial_points - 1)
@@ -588,6 +622,42 @@ def main() -> int:
         "source_state_maximum_support_mm": {
             "radial": source_radial_support * 1.0e3,
             "axial": source_axial_support * 1.0e3,
+        },
+        "morphology_screening": {
+            "basis": "rendered 99.9% radiance containment and edge occupancy",
+            "plume_like_count": len(typical_rows),
+            "excluded": {
+                row["element"]: row["radiance_morphology"]
+                for row in rows
+                if not row["radiance_morphology"]["eligible_for_typical_fov"]
+            },
+            "edge_censored_plume_like": [
+                row["element"]
+                for row in typical_rows
+                if row["radiance_morphology"]["radial_edge_cropped"]
+                or row["radiance_morphology"]["axial_edge_cropped"]
+            ],
+        },
+        "typical_plume_99_9_containment_mm": {
+            "radial": typical_radial_quantiles,
+            "axial": typical_axial_quantiles,
+        },
+        "typical_plume_field_of_view_mm": {
+            "average_median_plus_15_percent": {
+                "r_max": average_radial * 1.0e3,
+                "x_min": -average_radial * 1.0e3,
+                "x_max": average_radial * 1.0e3,
+                "z_min": 0.0,
+                "z_max": average_axial * 1.0e3,
+            },
+            "balanced_p75_plus_10_percent": {
+                "r_max": balanced_radial * 1.0e3,
+                "x_min": -balanced_radial * 1.0e3,
+                "x_max": balanced_radial * 1.0e3,
+                "z_min": 0.0,
+                "z_max": balanced_axial * 1.0e3,
+            },
+            "warning": "edge-censored quantiles are lower bounds when listed above",
         },
         "recommended_common_field_of_view_mm": {
             "r_max": recommended_radial * 1.0e3,

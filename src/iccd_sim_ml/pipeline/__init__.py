@@ -18,6 +18,8 @@ from .cache import (
 )
 from .fov import (
     RadianceExtent,
+    RadianceMorphology,
+    assess_radiance_morphology,
     bracketing_frame_indices,
     select_maximum_condition,
     summarize_radiance_extent,
@@ -48,6 +50,8 @@ __all__ = [
     "PlasmaWindowQuality",
     "RadianceQuality",
     "RadianceExtent",
+    "RadianceMorphology",
+    "assess_radiance_morphology",
     "SourceSample",
     "TrainingRunConfig",
     "discover_balanced_subset",

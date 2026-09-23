@@ -152,6 +152,39 @@ version those bounds for a different time window, material, or camera view;
 do not infer them from frame zero. Keep one physics configuration, field of
 view, and physical time grid across all samples in a training dataset.
 
+A maximum-power/maximum-spot late-time survey found that raw hot-cell support
+is not a valid camera-sizing metric. Some source solutions (notably V, Sm,
+Nb, and condition-dependent C/Fe cases) become slab-like or fill the solver
+window rather than retaining a localized plume. The survey now caps automatic
+diagnostic views at 200 mm, reports edge censoring, and excludes slab-like or
+field-filling radiance when calculating typical-plume percentiles.
+
+For plume-shaped cases, the measured 99.9%-radiance medians were approximately
+`r=44 mm, z=105 mm` at 8 microseconds, `r=48 mm, z=124 mm` at 10
+microseconds, and `r=61 mm, z=157 mm` at 20 microseconds. Versioned
+median-plus-margin configurations are provided as
+[`continuum_ml_typical_8us.json`](configs/continuum_ml_typical_8us.json),
+[`continuum_ml_typical_10us.json`](configs/continuum_ml_typical_10us.json), and
+[`continuum_ml_typical_20us.json`](configs/continuum_ml_typical_20us.json).
+The 20-microsecond configuration does not imply complete source coverage:
+eight maximum-condition simulations end before 20 microseconds, and even 10
+microseconds is unavailable for Fe and Tm. Eight microseconds is the longest
+common target in the current files.
+
+At 96 x 96, these fields of view have approximately the following pixel
+pitches:
+
+| target | field of view | x pitch | z pitch | source coverage |
+|---|---:|---:|---:|---:|
+| 8 microseconds | `x=+/-55 mm`, `z=0--125 mm` | 1.16 mm | 1.32 mm | 37/37 |
+| 10 microseconds | `x=+/-60 mm`, `z=0--145 mm` | 1.26 mm | 1.53 mm | 35/37 |
+| 20 microseconds | `x=+/-75 mm`, `z=0--185 mm` | 1.58 mm | 1.95 mm | 29/37 |
+
+Use the 8-microsecond profile when one canonical all-element dataset is
+required. Use the longer profiles only for explicitly coverage-filtered
+experiments, and retain the morphology flags rather than silently discarding
+anomalous source simulations.
+
 The 128 line-of-sight cells are internal radiative-transfer quadrature points,
 not a third model dimension. The saved ML tensor remains `(T, 96, 96)` and is
 promoted to `(C, T, 96, 96)` by the dataset.

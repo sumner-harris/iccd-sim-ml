@@ -60,6 +60,15 @@ window. Spatial shape alone is insufficient metadata; record the physical
 field of view and time grid because two 96 x 96 videos with different bounds
 do not represent the same measurement.
 
+For longer all-element sequences, use radiance-containment population
+statistics rather than the maximum hot-cell coordinate. The current files
+share coverage only through 8 microseconds; the corresponding typical-plume
+configuration is `configs/continuum_ml_typical_8us.json` with
+`x = +/-55 mm` and `z = 0--125 mm`. The 10- and 20-microsecond variants are
+coverage-filtered alternatives. Their source-coverage counts are 35/37 and
+29/37, respectively. Slab-like and field-filling simulations are retained
+and flagged for review, but they do not set the typical field of view.
+
 ## Split according to the scientific claim
 
 The correct split depends on what is being claimed:
