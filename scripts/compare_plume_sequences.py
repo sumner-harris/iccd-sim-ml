@@ -73,7 +73,8 @@ def _render_element(
     )
     opacity = atomic.build_opacity_model().build_lookup(temperature_grid, wavelength_grid_m)
     rendered = {
-        index: simulate_continuum_image(timesteps[index], config, opacity)[0] for index in indices
+        index: simulate_continuum_image(timesteps[index], config, opacity).image_photon_radiance
+        for index in indices
     }
     frames = []
     sources = []
