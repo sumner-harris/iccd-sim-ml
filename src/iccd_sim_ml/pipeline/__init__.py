@@ -16,6 +16,12 @@ from .cache import (
     ensure_continuum_cache,
     ensure_proxy_cache,
 )
+from .fov import (
+    RadianceExtent,
+    bracketing_frame_indices,
+    select_maximum_condition,
+    summarize_radiance_extent,
+)
 from .quality import (
     PlasmaWindowQuality,
     RadianceQuality,
@@ -41,9 +47,11 @@ __all__ = [
     "ProxyCacheConfig",
     "PlasmaWindowQuality",
     "RadianceQuality",
+    "RadianceExtent",
     "SourceSample",
     "TrainingRunConfig",
     "discover_balanced_subset",
+    "bracketing_frame_indices",
     "ensure_continuum_cache",
     "ensure_proxy_cache",
     "fit_experiment_scalers",
@@ -52,8 +60,10 @@ __all__ = [
     "run_joint_cvae_experiment",
     "run_regression_experiment",
     "sparse_level_stages",
+    "select_maximum_condition",
     "summarize_plasma_window",
     "summarize_radiance",
+    "summarize_radiance_extent",
 ]
 
 
