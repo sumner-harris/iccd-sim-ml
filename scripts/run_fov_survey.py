@@ -435,19 +435,45 @@ def main() -> int:
     if args.inspect_only:
         return 0
 
-    common_radial_domain = min(row["common_radial_domain_m"] for row in inspected)
-    common_axial_domain = min(row["common_axial_domain_m"] for row in inspected)
+    minimum_radial_domain = min(row["common_radial_domain_m"] for row in inspected)
+    maximum_radial_domain = max(row["common_radial_domain_m"] for row in inspected)
+    minimum_axial_domain = min(row["common_axial_domain_m"] for row in inspected)
+    maximum_axial_domain = max(row["common_axial_domain_m"] for row in inspected)
+    source_radial_support = max(
+        max(
+            row["source_state"]["charged_radial_max_m"] or 0.0,
+            row["source_state"]["hot_radial_max_m"] or 0.0,
+        )
+        for row in inspected
+    )
+    source_axial_support = max(
+        max(
+            row["source_state"]["charged_axial_max_m"] or 0.0,
+            row["source_state"]["hot_axial_max_m"] or 0.0,
+        )
+        for row in inspected
+    )
     radial_max = (
-        common_radial_domain if args.survey_radial_mm is None else args.survey_radial_mm * 1.0e-3
+        min(
+            _round_up_m(source_radial_support * (1.0 + args.margin_fraction), args.round_up_mm),
+            maximum_radial_domain,
+        )
+        if args.survey_radial_mm is None
+        else args.survey_radial_mm * 1.0e-3
     )
     axial_max = (
-        common_axial_domain if args.survey_axial_mm is None else args.survey_axial_mm * 1.0e-3
+        min(
+            _round_up_m(source_axial_support * (1.0 + args.margin_fraction), args.round_up_mm),
+            maximum_axial_domain,
+        )
+        if args.survey_axial_mm is None
+        else args.survey_axial_mm * 1.0e-3
     )
-    if radial_max > common_radial_domain or axial_max > common_axial_domain:
+    if radial_max > maximum_radial_domain or axial_max > maximum_axial_domain:
         raise ValueError(
-            "Survey FOV exceeds at least one source domain: requested "
-            f"r={radial_max:g} m, z={axial_max:g} m; common domain is "
-            f"r={common_radial_domain:g} m, z={common_axial_domain:g} m"
+            "Survey FOV exceeds every source domain: requested "
+            f"r={radial_max:g} m, z={axial_max:g} m; maximum domains are "
+            f"r={maximum_radial_domain:g} m, z={maximum_axial_domain:g} m"
         )
     config = ImagingConfig(
         wavelength_min_nm=300.0,
@@ -552,6 +578,16 @@ def main() -> int:
             "x_max": radial_max * 1.0e3,
             "z_min": 0.0,
             "z_max": axial_max * 1.0e3,
+        },
+        "source_domain_range_mm": {
+            "radial_min": minimum_radial_domain * 1.0e3,
+            "radial_max": maximum_radial_domain * 1.0e3,
+            "axial_min": minimum_axial_domain * 1.0e3,
+            "axial_max": maximum_axial_domain * 1.0e3,
+        },
+        "source_state_maximum_support_mm": {
+            "radial": source_radial_support * 1.0e3,
+            "axial": source_axial_support * 1.0e3,
         },
         "recommended_common_field_of_view_mm": {
             "r_max": recommended_radial * 1.0e3,

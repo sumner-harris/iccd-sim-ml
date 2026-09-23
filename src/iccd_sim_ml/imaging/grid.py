@@ -101,12 +101,16 @@ def resample_timestep(
     """Resample adaptive cell centres onto a common r-z grid.
 
     Nearest interpolation is used only to extend the linear interpolant from
-    outermost cell centres to the inferred physical domain edges. Vacuum is
-    imposed later for cylindrical radius beyond ``radial_max_m``.
+    outermost cell centres to the inferred physical domain edges. If the
+    requested camera field of view exceeds the solver domain, the excess is
+    explicitly vacuum rather than a nearest-neighbor copy of boundary plasma.
+    Vacuum is also imposed later outside the requested cylindrical radius.
     """
 
-    r_max = infer_dyadic_domain_max(timestep.r_m) if radial_max_m is None else radial_max_m
-    z_max = infer_dyadic_domain_max(timestep.z_m) if axial_max_m is None else axial_max_m
+    source_r_max = infer_dyadic_domain_max(timestep.r_m)
+    source_z_max = infer_dyadic_domain_max(timestep.z_m)
+    r_max = source_r_max if radial_max_m is None else radial_max_m
+    z_max = source_z_max if axial_max_m is None else axial_max_m
     r_axis = np.linspace(0.0, r_max, radial_points, dtype=np.float64)
     z_axis = np.linspace(0.0, z_max, axial_points, dtype=np.float64)
     radial_grid, axial_grid = np.meshgrid(r_axis, z_axis, indexing="ij")
@@ -125,6 +129,10 @@ def resample_timestep(
             "alpha_ib_ei_248_m1": timestep.alpha_ib_ei_248_m1,
         },
     )
+    outside_source_domain = (radial_grid > source_r_max) | (axial_grid > source_z_max)
+    if np.any(outside_source_domain):
+        for field in values.values():
+            field[outside_source_domain.ravel()] = 0.0
     shaped = {name: item.reshape(radial_points, axial_points) for name, item in values.items()}
     return AxisymmetricGrid(r_m=r_axis, z_m=z_axis, **shaped)
 

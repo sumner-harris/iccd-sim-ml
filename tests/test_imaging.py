@@ -7,8 +7,9 @@ import pytest
 
 from iccd_sim_ml.imaging import ImagingConfig, simulate_continuum_sequence
 from iccd_sim_ml.imaging.blackbody import planck_photon_radiance_lambda
-from iccd_sim_ml.imaging.grid import SideViewState, infer_dyadic_domain_max
+from iccd_sim_ml.imaging.grid import SideViewState, infer_dyadic_domain_max, resample_timestep
 from iccd_sim_ml.imaging.transfer import formal_solution_step, solve_lte_continuum
+from iccd_sim_ml.io import plasma_timestep_from_array
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,25 @@ def test_domain_inference_recovers_dyadic_edge() -> None:
     minimum_center = 0.05 / 1024.0
     coordinates = np.asarray([minimum_center, 500 * minimum_center, 1008 * minimum_center])
     assert np.isclose(infer_dyadic_domain_max(coordinates), 0.05)
+
+
+def test_resampling_larger_fov_imposes_vacuum_outside_source_domain() -> None:
+    raw = np.zeros((4, 34), dtype=np.float64)
+    raw[:, 0] = [0.025, 0.075, 0.025, 0.075]
+    raw[:, 1] = [0.025, 0.025, 0.075, 0.075]
+    raw[:, 4] = 5_000.0
+    raw[:, 9:13] = 1.0e18
+    timestep = plasma_timestep_from_array(raw, source="synthetic.h5", mesh_level_index=21)
+    grid = resample_timestep(
+        timestep,
+        radial_points=3,
+        axial_points=3,
+        radial_max_m=0.2,
+        axial_max_m=0.2,
+    )
+    assert np.all(grid.temperature_K[-1, :] == 0.0)
+    assert np.all(grid.temperature_K[:, -1] == 0.0)
+    assert grid.temperature_K[0, 0] > 0.0
 
 
 def test_sequence_requires_explicit_fixed_field_of_view() -> None:
