@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -93,6 +94,13 @@ def _seed(config: TrainingRunConfig) -> None:
         torch.cuda.manual_seed_all(config.seed)
 
 
+def _synchronize(device: torch.device) -> None:
+    """Make accelerator timings include all queued kernels."""
+
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+
+
 def _loader(dataset: Any, config: TrainingRunConfig, *, shuffle: bool) -> DataLoader:
     generator = torch.Generator().manual_seed(config.seed)
     return DataLoader(
@@ -178,9 +186,18 @@ def run_regression_experiment(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
     criterion = nn.SmoothL1Loss()
-    history = {"epoch": [], "train_loss": [], "validation_loss": []}
+    history = {
+        "epoch": [],
+        "train_loss": [],
+        "validation_loss": [],
+        "train_seconds": [],
+        "validation_seconds": [],
+        "epoch_seconds": [],
+    }
     final_validation: dict[str, Any] = {}
     for epoch in range(config.epochs):
+        _synchronize(device)
+        epoch_started = time.perf_counter()
         training = train_one_epoch(
             model,
             train_loader,
@@ -190,6 +207,8 @@ def run_regression_experiment(
             task="regression",
             target_names=TARGET_NAMES,
         )
+        _synchronize(device)
+        training_finished = time.perf_counter()
         final_validation = evaluate_epoch(
             model,
             validation_loader,
@@ -198,9 +217,21 @@ def run_regression_experiment(
             task="regression",
             target_names=TARGET_NAMES,
         )
+        _synchronize(device)
+        validation_finished = time.perf_counter()
         history["epoch"].append(epoch + 1)
         history["train_loss"].append(training["loss"])
         history["validation_loss"].append(final_validation["loss"])
+        history["train_seconds"].append(training_finished - epoch_started)
+        history["validation_seconds"].append(validation_finished - training_finished)
+        history["epoch_seconds"].append(validation_finished - epoch_started)
+        print(
+            f"regression epoch {epoch + 1}/{config.epochs}: "
+            f"train={history['train_seconds'][-1]:.2f}s, "
+            f"validation={history['validation_seconds'][-1]:.2f}s, "
+            f"total={history['epoch_seconds'][-1]:.2f}s",
+            flush=True,
+        )
     truth, estimate = _collect_regression(model, validation_loader, device, scalers)
     physical_metrics = regression_metrics(truth, estimate, target_names=TARGET_NAMES)
     plot_learning_curves(history, output / "learning_curves.png")
@@ -451,8 +482,13 @@ def run_joint_cvae_experiment(
             history[f"{phase}_{name}"] = []
     history["train_accuracy"] = []
     history["validation_accuracy"] = []
+    history["train_seconds"] = []
+    history["validation_seconds"] = []
+    history["epoch_seconds"] = []
     final_validation: dict[str, Any] = {}
     for epoch in range(config.epochs):
+        _synchronize(device)
+        epoch_started = time.perf_counter()
         warmup = min(1.0, (epoch + 1) / max(config.epochs, 1))
         training = train_joint_one_epoch(
             model,
@@ -465,6 +501,8 @@ def run_joint_cvae_experiment(
             target_names=TARGET_NAMES,
             num_classes=len(class_names),
         )
+        _synchronize(device)
+        training_finished = time.perf_counter()
         final_validation = evaluate_joint_epoch(
             model,
             validation_loader,
@@ -475,6 +513,8 @@ def run_joint_cvae_experiment(
             target_names=TARGET_NAMES,
             num_classes=len(class_names),
         )
+        _synchronize(device)
+        validation_finished = time.perf_counter()
         history["epoch"].append(epoch + 1)
         for name in tracked:
             history[f"train_{name}"].append(training[name])
@@ -482,6 +522,16 @@ def run_joint_cvae_experiment(
         history["train_accuracy"].append(training["classification_metrics"]["accuracy"])
         history["validation_accuracy"].append(
             final_validation["classification_metrics"]["accuracy"]
+        )
+        history["train_seconds"].append(training_finished - epoch_started)
+        history["validation_seconds"].append(validation_finished - training_finished)
+        history["epoch_seconds"].append(validation_finished - epoch_started)
+        print(
+            f"joint_cvae epoch {epoch + 1}/{config.epochs}: "
+            f"train={history['train_seconds'][-1]:.2f}s, "
+            f"validation={history['validation_seconds'][-1]:.2f}s, "
+            f"total={history['epoch_seconds'][-1]:.2f}s",
+            flush=True,
         )
     collected = _collect_joint_outputs(model, validation_loader, device, scalers)
     plot_learning_curves(history, output / "learning_curves.png")
