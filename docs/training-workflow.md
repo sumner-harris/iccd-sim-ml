@@ -44,6 +44,46 @@ The combined script can train `regression`, `classification`, `joint_cvae`, or
 `all`. The dedicated models do not pay the computational cost of the CVAE when
 generation is unnecessary.
 
+## Production manifest mode
+
+The full-cache manifest is the training source for production runs. Manifest
+mode consumes every record by default; `--elements` is only an explicit filter
+for targeted experiments. It does not reopen the raw HDF5 files or run image
+formation during training.
+
+Prepare a deterministic, within-element 70/15/15 split and fit train-only
+scalers without starting a model:
+
+```bash
+python scripts/run_training_pipeline.py \
+  --manifest /mnt/shared_drive/plasma_sim_data_cache/manifest.json \
+  --output-dir /mnt/shared_drive/plasma_sim_training/8us-known-material-seed42 \
+  --split-strategy known-material \
+  --split-ratios 0.70 0.15 0.15 \
+  --seed 42 \
+  --prepare-only
+```
+
+Remove `--prepare-only` and select `--models regression`, `classification`,
+`joint_cvae`, or `all` to train. Use `--architecture standard` for production;
+the default `smoke` architecture exists only for fast integration tests.
+
+The first invocation atomically writes `split.json` and `scalers.json` in the
+output directory. Later invocations load both. A changed manifest, seed,
+ratio, or grouping policy fails instead of silently changing membership. Use
+`--regenerate-split` or `--refit-scalers` only when intentionally starting a
+new data-preparation version. `split.json` protects complete simulation IDs,
+and scaler parameters are computed from `split.train` only.
+
+Available split strategies are:
+
+- `known-material`: stratifies within every element, appropriate for the
+  primary regression/classification/CVAE experiment;
+- `element-held-out`: keeps entire elements in separate partitions for
+  unseen-material regression/generation evaluation;
+- `legacy`: reproduces the original global 70/30 same-material regime and has
+  no test partition.
+
 ## Smoke-test cache versus scientific cache
 
 The bundled multi-element cache backend is a software smoke-test fixture. It

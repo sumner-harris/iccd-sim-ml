@@ -324,6 +324,27 @@ restart revalidates existing products, while `progress.json`,
 `source_inventory.json`, and the final `manifest.json` remain in the cache
 root.
 
+Train from the completed cache by passing its manifest. This uses every record
+unless `--elements` is explicitly supplied, creates or reuses a persistent
+70/15/15 within-element split, and fits normalization on training IDs only:
+
+```bash
+python scripts/run_training_pipeline.py \
+  --manifest /mnt/shared_drive/plasma_sim_data_cache/manifest.json \
+  --output-dir /mnt/shared_drive/plasma_sim_training/8us-known-material-seed42 \
+  --split-strategy known-material \
+  --split-ratios 0.70 0.15 0.15 \
+  --seed 42 \
+  --architecture standard \
+  --models regression
+```
+
+Use `--prepare-only` to write and audit `split.json` and `scalers.json` before
+allocating a training GPU. Subsequent runs validate and reuse those artifacts
+rather than silently repartitioning the dataset. See
+[`docs/training-workflow.md`](docs/training-workflow.md) for all-data,
+element-held-out, and legacy split semantics.
+
 ## Repository map
 
 ```text

@@ -39,6 +39,9 @@ _LAZY_EXPORTS = {
     "run_experiment": (".experiments", "run_experiment"),
     "run_joint_cvae_experiment": (".experiments", "run_joint_cvae_experiment"),
     "run_regression_experiment": (".experiments", "run_regression_experiment"),
+    "create_split": (".workflow", "create_split"),
+    "resolve_split": (".workflow", "resolve_split"),
+    "subset_manifest": (".workflow", "subset_manifest"),
 }
 
 __all__ = [
@@ -54,6 +57,7 @@ __all__ = [
     "assess_radiance_morphology",
     "SourceSample",
     "TrainingRunConfig",
+    "create_split",
     "discover_balanced_subset",
     "bracketing_frame_indices",
     "ensure_continuum_cache",
@@ -63,11 +67,13 @@ __all__ = [
     "run_experiment",
     "run_joint_cvae_experiment",
     "run_regression_experiment",
+    "resolve_split",
     "sparse_level_stages",
     "select_maximum_condition",
     "summarize_plasma_window",
     "summarize_radiance",
     "summarize_radiance_extent",
+    "subset_manifest",
 ]
 
 

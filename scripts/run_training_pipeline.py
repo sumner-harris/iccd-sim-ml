@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from iccd_sim_ml.data import make_known_material_split
+from iccd_sim_ml.data import DatasetManifest, ScalerBundle
 from iccd_sim_ml.imaging import ImagingConfig
 from iccd_sim_ml.pipeline import (
     ContinuumCacheConfig,
@@ -19,7 +19,9 @@ from iccd_sim_ml.pipeline import (
     ensure_continuum_cache,
     ensure_proxy_cache,
     fit_experiment_scalers,
+    resolve_split,
     run_experiment,
+    subset_manifest,
 )
 from iccd_sim_ml.pipeline.reports import save_metrics_json
 
@@ -32,11 +34,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="End-to-end cache, training, checkpoint, and report workflow"
     )
-    parser.add_argument("--data-dir", type=Path, required=True)
-    parser.add_argument("--cache-dir", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--manifest",
+        type=Path,
+        help="Completed precomputed-cache manifest; trains from every record by default.",
+    )
+    source.add_argument("--data-dir", type=Path, help="Raw HDF5 directory for subset workflows.")
+    parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--elements", nargs="+", default=("Al", "Cu", "V"))
-    parser.add_argument("--simulations-per-element", type=int, default=3)
+    parser.add_argument(
+        "--elements",
+        nargs="+",
+        help="Optional element filter. Manifest mode uses every element when omitted.",
+    )
+    parser.add_argument("--simulations-per-element", type=int)
     parser.add_argument(
         "--cache-backend",
         choices=("proxy", "continuum"),
@@ -68,6 +80,38 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--weight-decay", type=float, default=0.0)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--split-strategy",
+        choices=("known-material", "legacy", "element-held-out"),
+        default="known-material",
+    )
+    parser.add_argument(
+        "--split-ratios",
+        nargs=3,
+        type=float,
+        metavar=("TRAIN", "VALIDATION", "TEST"),
+        help="Defaults to 0.70/0.15/0.15 for manifests and 2/3--1/3 for subset smoke runs.",
+    )
+    parser.add_argument(
+        "--split-file",
+        type=Path,
+        help="Persistent split manifest. Defaults to OUTPUT_DIR/split.json.",
+    )
+    parser.add_argument(
+        "--regenerate-split",
+        action="store_true",
+        help="Intentionally replace an existing split instead of reusing it.",
+    )
+    parser.add_argument(
+        "--refit-scalers",
+        action="store_true",
+        help="Refit train-only scalers even when a compatible saved bundle exists.",
+    )
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Create/reuse the split and train-only scalers without training models.",
+    )
     parser.add_argument("--architecture", choices=("smoke", "standard"), default="smoke")
     parser.add_argument("--device", default="auto")
     return parser
@@ -75,72 +119,164 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    elements = tuple(args.elements)
-    if args.cache_backend == "proxy":
-        frames = 8 if args.frames is None else args.frames
-        image_width = 32 if args.image_width is None else args.image_width
-        image_height = 32 if args.image_height is None else args.image_height
-        radial_max_mm = 15.0 if args.radial_max_mm is None else args.radial_max_mm
-        axial_max_mm = 32.0 if args.axial_max_mm is None else args.axial_max_mm
-        line_of_sight_points = (
-            32 if args.line_of_sight_points is None else args.line_of_sight_points
+    output_dir = args.output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest_mode = args.manifest is not None
+    source_summary: dict[str, object]
+    if manifest_mode:
+        if args.cache_dir is not None:
+            raise ValueError("--cache-dir is only used with --data-dir, not --manifest")
+        if args.simulations_per_element is not None:
+            raise ValueError(
+                "--simulations-per-element is a subset-smoke option; manifest mode uses all "
+                "records unless --elements filters them"
+            )
+        manifest = DatasetManifest.load(args.manifest)
+        manifest = subset_manifest(
+            manifest,
+            None if args.elements is None else tuple(args.elements),
         )
-        cache_config = ProxyCacheConfig(
-            frame_count=frames,
-            image_width=image_width,
-            image_height=image_height,
-            line_of_sight_points=line_of_sight_points,
-            radial_max_m=radial_max_mm * 1.0e-3,
-            axial_max_m=axial_max_mm * 1.0e-3,
+        missing_products = [
+            record.sample_id
+            for record in manifest.records
+            if not manifest.resolve_path(record).is_file()
+        ]
+        if missing_products:
+            raise FileNotFoundError(
+                f"Manifest references {len(missing_products)} missing products; "
+                f"first IDs: {missing_products[:5]}"
+            )
+        elements = tuple(sorted({record.element for record in manifest.records}))
+        source_summary = {
+            "mode": "precomputed_manifest",
+            "manifest": str(Path(args.manifest).expanduser().resolve()),
+            "records": len(manifest.records),
+        }
+        warning = (
+            "precomputed continuum products omit bound-bound lines and camera effects; "
+            "inspect quality flags before scientific use"
         )
-        minimum_frames = frames
+        print(
+            f"Loaded {len(manifest.records)} cached simulation(s) across "
+            f"{len(elements)} element(s) from {args.manifest}",
+            flush=True,
+        )
     else:
-        if args.atomic_reference is None:
-            raise ValueError("--atomic-reference is required for the continuum cache backend")
-        base_imaging = ImagingConfig.from_json(args.imaging_config)
-        frames = 16 if args.frames is None else args.frames
-        image_width = base_imaging.radial_points if args.image_width is None else args.image_width
-        image_height = base_imaging.axial_points if args.image_height is None else args.image_height
-        stop_ns = 8_000.0 if args.stop_ns is None else args.stop_ns
-        radial_max_mm = (
-            base_imaging.radial_max_m * 1.0e3 if args.radial_max_mm is None else args.radial_max_mm
+        if args.cache_dir is None:
+            raise ValueError("--cache-dir is required with --data-dir")
+        elements = tuple(args.elements or ("Al", "Cu", "V"))
+        simulations_per_element = (
+            3 if args.simulations_per_element is None else args.simulations_per_element
         )
-        axial_max_mm = (
-            base_imaging.axial_max_m * 1.0e3 if args.axial_max_mm is None else args.axial_max_mm
+        if args.cache_backend == "proxy":
+            frames = 8 if args.frames is None else args.frames
+            image_width = 32 if args.image_width is None else args.image_width
+            image_height = 32 if args.image_height is None else args.image_height
+            radial_max_mm = 15.0 if args.radial_max_mm is None else args.radial_max_mm
+            axial_max_mm = 32.0 if args.axial_max_mm is None else args.axial_max_mm
+            line_of_sight_points = (
+                32 if args.line_of_sight_points is None else args.line_of_sight_points
+            )
+            cache_config: ProxyCacheConfig | ContinuumCacheConfig = ProxyCacheConfig(
+                frame_count=frames,
+                image_width=image_width,
+                image_height=image_height,
+                line_of_sight_points=line_of_sight_points,
+                radial_max_m=radial_max_mm * 1.0e-3,
+                axial_max_m=axial_max_mm * 1.0e-3,
+            )
+            minimum_frames = frames
+            warning = "plasma_state_proxy_smoke_test is not calibrated ICCD radiance"
+        else:
+            if args.atomic_reference is None:
+                raise ValueError("--atomic-reference is required for the continuum cache backend")
+            base_imaging = ImagingConfig.from_json(args.imaging_config)
+            frames = 16 if args.frames is None else args.frames
+            image_width = (
+                base_imaging.radial_points if args.image_width is None else args.image_width
+            )
+            image_height = (
+                base_imaging.axial_points if args.image_height is None else args.image_height
+            )
+            stop_ns = 8_000.0 if args.stop_ns is None else args.stop_ns
+            radial_max_mm = (
+                base_imaging.radial_max_m * 1.0e3
+                if args.radial_max_mm is None
+                else args.radial_max_mm
+            )
+            axial_max_mm = (
+                base_imaging.axial_max_m * 1.0e3
+                if args.axial_max_mm is None
+                else args.axial_max_mm
+            )
+            line_of_sight_points = (
+                base_imaging.line_of_sight_points
+                if args.line_of_sight_points is None
+                else args.line_of_sight_points
+            )
+            if not 0.0 <= args.start_ns < stop_ns:
+                raise ValueError("Continuum cache times require 0 <= start-ns < stop-ns")
+            imaging = replace(
+                base_imaging,
+                wavelength_points=(
+                    base_imaging.wavelength_points
+                    if args.wavelength_points is None
+                    else args.wavelength_points
+                ),
+                radial_points=image_width,
+                axial_points=image_height,
+                line_of_sight_points=line_of_sight_points,
+                temperature_table_points=(
+                    base_imaging.temperature_table_points
+                    if args.temperature_table_points is None
+                    else args.temperature_table_points
+                ),
+                radial_max_m=radial_max_mm * 1.0e-3,
+                axial_max_m=axial_max_mm * 1.0e-3,
+            )
+            cache_config = ContinuumCacheConfig(
+                imaging=imaging,
+                frame_times_s=tuple(
+                    np.linspace(args.start_ns, stop_ns, frames, dtype=np.float64) * 1.0e-9
+                ),
+                atomic_mode=args.atomic_mode,
+            )
+            minimum_frames = 2
+            warning = (
+                "continuum products omit bound-bound lines and camera effects; inspect each "
+                "sample's atomic_fidelity before scientific use"
+            )
+        print(
+            f"Selecting {simulations_per_element} simulation(s) for each of "
+            f"{', '.join(elements)}...",
+            flush=True,
         )
-        line_of_sight_points = (
-            base_imaging.line_of_sight_points
-            if args.line_of_sight_points is None
-            else args.line_of_sight_points
+        samples = discover_balanced_subset(
+            args.data_dir,
+            elements=elements,
+            simulations_per_element=simulations_per_element,
+            minimum_frames=minimum_frames,
         )
-        if not 0.0 <= args.start_ns < stop_ns:
-            raise ValueError("Continuum cache times require 0 <= start-ns < stop-ns")
-        imaging = replace(
-            base_imaging,
-            wavelength_points=(
-                base_imaging.wavelength_points
-                if args.wavelength_points is None
-                else args.wavelength_points
-            ),
-            radial_points=image_width,
-            axial_points=image_height,
-            line_of_sight_points=line_of_sight_points,
-            temperature_table_points=(
-                base_imaging.temperature_table_points
-                if args.temperature_table_points is None
-                else args.temperature_table_points
-            ),
-            radial_max_m=radial_max_mm * 1.0e-3,
-            axial_max_m=axial_max_mm * 1.0e-3,
-        )
-        cache_config = ContinuumCacheConfig(
-            imaging=imaging,
-            frame_times_s=tuple(
-                np.linspace(args.start_ns, stop_ns, frames, dtype=np.float64) * 1.0e-9
-            ),
-            atomic_mode=args.atomic_mode,
-        )
-        minimum_frames = 2
+        if args.cache_backend == "proxy":
+            cache = ensure_proxy_cache(samples, args.cache_dir, cache_config)
+        else:
+            cache = ensure_continuum_cache(
+                samples,
+                args.cache_dir,
+                cache_config,
+                args.atomic_reference,
+            )
+        manifest = cache.manifest
+        print(f"Cache: {len(cache.hits)} hit(s), {len(cache.misses)} miss(es)", flush=True)
+        source_summary = {
+            "mode": "raw_hdf5_subset",
+            "manifest": str(manifest.source),
+            "cache_backend": args.cache_backend,
+            "cache_hits": cache.hits,
+            "cache_misses": cache.misses,
+            "cache_config": asdict(cache_config),
+            "simulations_per_element": simulations_per_element,
+        }
     training_config = TrainingRunConfig(
         epochs=args.epochs,
         batch_size=args.batch_size,
@@ -151,83 +287,90 @@ def main(argv: list[str] | None = None) -> int:
         architecture=args.architecture,
         device=args.device,
     )
+    if args.split_ratios is None:
+        if args.split_strategy == "legacy":
+            split_ratios = (0.7, 0.3, 0.0)
+        elif manifest_mode:
+            split_ratios = (0.7, 0.15, 0.15)
+        else:
+            split_ratios = (2.0 / 3.0, 1.0 / 3.0, 0.0)
+    else:
+        split_ratios = tuple(args.split_ratios)
+    split_path = (
+        output_dir / "split.json"
+        if args.split_file is None
+        else args.split_file.expanduser().resolve()
+    )
+    split, split_state = resolve_split(
+        manifest,
+        split_path,
+        strategy=args.split_strategy,
+        ratios=split_ratios,
+        seed=args.seed,
+        regenerate=args.regenerate_split,
+    )
     print(
-        f"Selecting {args.simulations_per_element} simulation(s) for each of "
-        f"{', '.join(elements)}...",
+        f"Split {split_state}: train={len(split.train)}, "
+        f"validation={len(split.validation)}, test={len(split.test)} at {split_path}",
         flush=True,
     )
-    samples = discover_balanced_subset(
-        args.data_dir,
-        elements=elements,
-        simulations_per_element=args.simulations_per_element,
-        minimum_frames=minimum_frames,
-    )
-    if args.cache_backend == "proxy":
-        cache = ensure_proxy_cache(samples, args.cache_dir, cache_config)
-    else:
-        cache = ensure_continuum_cache(
-            samples,
-            args.cache_dir,
-            cache_config,
-            args.atomic_reference,
+    scalers_path = output_dir / "scalers.json"
+    scalers_state = "fitted"
+    if scalers_path.is_file() and split_state == "loaded" and not args.refit_scalers:
+        scalers = ScalerBundle.from_dict(
+            json.loads(scalers_path.read_text(encoding="utf-8"))
         )
-    print(f"Cache: {len(cache.hits)} hit(s), {len(cache.misses)} miss(es)", flush=True)
-
-    split = make_known_material_split(
-        cache.manifest,
-        ratios=(2.0 / 3.0, 1.0 / 3.0, 0.0),
-        seed=args.seed,
-    )
-    output_dir = args.output_dir.expanduser().resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    split.save(output_dir / "split.json")
-    scalers = fit_experiment_scalers(cache.manifest, split)
-    save_metrics_json(output_dir / "scalers.json", scalers.to_dict())
+        if scalers.train_sample_ids != split.train:
+            raise ValueError(
+                "Saved scalers were fit to different training IDs; use --refit-scalers "
+                "after verifying the split"
+            )
+        scalers_state = "loaded"
+    else:
+        scalers = fit_experiment_scalers(manifest, split)
+        save_metrics_json(scalers_path, scalers.to_dict())
+    print(f"Scalers {scalers_state}: {scalers_path}", flush=True)
 
     choices = (
         ("regression", "classification", "joint_cvae") if "all" in args.models else args.models
     )
     results = {}
-    for choice in choices:
-        print(f"Training {choice}...", flush=True)
-        results[choice] = run_experiment(
-            choice,
-            cache.manifest,
-            split,
-            scalers,
-            output_dir,
-            training_config,
-        )
+    if not args.prepare_only:
+        for choice in choices:
+            print(f"Training {choice}...", flush=True)
+            results[choice] = run_experiment(
+                choice,
+                manifest,
+                split,
+                scalers,
+                output_dir,
+                training_config,
+            )
     summary = {
         "workflow": "cache_train_report",
-        "cache_backend": args.cache_backend,
-        "warning": (
-            "plasma_state_proxy_smoke_test is not calibrated ICCD radiance"
-            if args.cache_backend == "proxy"
-            else (
-                "continuum products omit bound-bound lines and camera effects; inspect each "
-                "sample's atomic_fidelity before scientific use"
-            )
-        ),
+        "data_source": source_summary,
+        "warning": warning,
         "elements": elements,
-        "simulations_per_element": args.simulations_per_element,
-        "sample_ids": [sample.sample_id for sample in samples],
-        "cache": {
-            "hits": cache.hits,
-            "misses": cache.misses,
-            "config": asdict(cache_config),
-            "manifest": str(cache.manifest.source),
+        "sample_count": len(manifest.records),
+        "sample_ids": [record.sample_id for record in manifest.records],
+        "split": {
+            "path": str(split_path),
+            "state": split_state,
+            "strategy": args.split_strategy,
+            "manifest": split.to_dict(),
         },
-        "split": split.to_dict(),
+        "scalers": {"path": str(scalers_path), "state": scalers_state},
         "training_config": asdict(training_config),
+        "prepare_only": args.prepare_only,
         "results": results,
     }
     save_metrics_json(output_dir / "pipeline_summary.json", summary)
     print(
         json.dumps(
             {
-                "cache_hits": len(cache.hits),
-                "cache_misses": len(cache.misses),
+                "samples": len(manifest.records),
+                "split_state": split_state,
+                "scalers_state": scalers_state,
                 "models": list(results),
             },
             indent=2,
