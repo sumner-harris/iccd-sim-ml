@@ -148,15 +148,36 @@ def plot_generation_error_maps(
     generated: np.ndarray,
     sample_names: tuple[str, ...],
     path: str | Path,
+    *,
+    max_samples: int = 8,
 ) -> Path:
-    """Plot time-averaged targets, generations, and absolute errors."""
+    """Plot time-averaged targets, generations, and absolute errors.
 
-    truth = np.asarray(targets, dtype=np.float64)
-    estimate = np.asarray(generated, dtype=np.float64)
-    if truth.shape != estimate.shape or truth.ndim != 5 or truth.shape[1] != 1:
+    Large validation sets are sampled at evenly spaced indices so report
+    generation remains bounded. Aggregate metrics should still be calculated
+    from the complete validation arrays by the caller.
+    """
+
+    if max_samples < 1:
+        raise ValueError("max_samples must be positive")
+    raw_truth = np.asarray(targets)
+    raw_estimate = np.asarray(generated)
+    if (
+        raw_truth.shape != raw_estimate.shape
+        or raw_truth.ndim != 5
+        or raw_truth.shape[1] != 1
+    ):
         raise ValueError("Generation arrays must share shape (N,1,T,H,W)")
-    if len(sample_names) != truth.shape[0]:
+    if len(sample_names) != raw_truth.shape[0]:
         raise ValueError("sample_names does not match generation sample count")
+    if raw_truth.shape[0] == 0:
+        raise ValueError("At least one generation sample is required")
+    total_samples = raw_truth.shape[0]
+    selected_count = min(total_samples, max_samples)
+    selected = np.linspace(0, total_samples - 1, selected_count, dtype=np.int64)
+    truth = np.asarray(raw_truth[selected], dtype=np.float64)
+    estimate = np.asarray(raw_estimate[selected], dtype=np.float64)
+    names = tuple(sample_names[index] for index in selected)
     destination = _destination(path)
     rows = truth.shape[0]
     figure, axes = plt.subplots(
@@ -166,7 +187,7 @@ def plot_generation_error_maps(
         constrained_layout=True,
         squeeze=False,
     )
-    for row, name in enumerate(sample_names):
+    for row, name in enumerate(names):
         target_mean = np.mean(truth[row, 0], axis=0)
         generated_mean = np.mean(estimate[row, 0], axis=0)
         error_mean = np.mean(np.abs(estimate[row, 0] - truth[row, 0]), axis=0)
@@ -186,7 +207,10 @@ def plot_generation_error_maps(
     for axis in axes.ravel():
         axis.set_xticks([])
         axis.set_yticks([])
-    figure.suptitle("Conditional-generation validation error maps")
+    figure.suptitle(
+        f"Conditional-generation validation error maps "
+        f"({selected_count} of {total_samples} samples)"
+    )
     figure.savefig(destination, dpi=180)
     plt.close(figure)
     return destination
