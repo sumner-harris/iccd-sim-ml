@@ -68,6 +68,12 @@ Remove `--prepare-only` and select `--models regression`, `classification`,
 `joint_cvae`, or `all` to train. Use `--architecture standard` for production;
 the default `smoke` architecture exists only for fast integration tests.
 
+For a production regression run, `--early-stopping-patience N` monitors
+validation loss, stops after `N` consecutive non-improving epochs, and restores
+the best model and optimizer state before final metrics and checkpoint output.
+`--early-stopping-min-delta` sets the minimum absolute loss improvement and
+defaults to zero. Early stopping is disabled when patience is omitted.
+
 The first invocation atomically writes `split.json` and `scalers.json` in the
 output directory. Later invocations load both. A changed manifest, seed,
 ratio, or grouping policy fails instead of silently changing membership. Use

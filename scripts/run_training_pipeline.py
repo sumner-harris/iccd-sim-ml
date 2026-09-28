@@ -81,6 +81,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--early-stopping-patience",
+        type=int,
+        help="Stop regression after this many epochs without validation-loss improvement.",
+    )
+    parser.add_argument(
+        "--early-stopping-min-delta",
+        type=float,
+        default=0.0,
+        help="Minimum absolute validation-loss reduction counted as improvement.",
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -286,6 +297,8 @@ def main(argv: list[str] | None = None) -> int:
         seed=args.seed,
         architecture=args.architecture,
         device=args.device,
+        early_stopping_patience=args.early_stopping_patience,
+        early_stopping_min_delta=args.early_stopping_min_delta,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

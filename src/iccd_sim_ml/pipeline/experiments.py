@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -61,12 +62,18 @@ class TrainingRunConfig:
     seed: int = 42
     architecture: Literal["smoke", "standard"] = "smoke"
     device: str = "auto"
+    early_stopping_patience: int | None = None
+    early_stopping_min_delta: float = 0.0
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
             raise ValueError("epochs/batch_size must be positive and num_workers non-negative")
         if self.learning_rate <= 0.0 or self.weight_decay < 0.0:
             raise ValueError("learning_rate must be positive and weight_decay non-negative")
+        if self.early_stopping_patience is not None and self.early_stopping_patience < 1:
+            raise ValueError("early_stopping_patience must be positive when enabled")
+        if self.early_stopping_min_delta < 0.0:
+            raise ValueError("early_stopping_min_delta must be non-negative")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -195,6 +202,12 @@ def run_regression_experiment(
         "epoch_seconds": [],
     }
     final_validation: dict[str, Any] = {}
+    best_validation_loss = float("inf")
+    best_epoch = 0
+    epochs_without_improvement = 0
+    best_model_state: dict[str, Any] | None = None
+    best_optimizer_state: dict[str, Any] | None = None
+    stopped_early = False
     for epoch in range(config.epochs):
         _synchronize(device)
         epoch_started = time.perf_counter()
@@ -232,6 +245,30 @@ def run_regression_experiment(
             f"total={history['epoch_seconds'][-1]:.2f}s",
             flush=True,
         )
+        validation_loss = float(final_validation["loss"])
+        if validation_loss < best_validation_loss - config.early_stopping_min_delta:
+            best_validation_loss = validation_loss
+            best_epoch = epoch + 1
+            epochs_without_improvement = 0
+            if config.early_stopping_patience is not None:
+                best_model_state = copy.deepcopy(model.state_dict())
+                best_optimizer_state = copy.deepcopy(optimizer.state_dict())
+        else:
+            epochs_without_improvement += 1
+        if (
+            config.early_stopping_patience is not None
+            and epochs_without_improvement >= config.early_stopping_patience
+        ):
+            stopped_early = True
+            print(
+                f"regression early stopping after epoch {epoch + 1}; "
+                f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
+                flush=True,
+            )
+            break
+    if best_model_state is not None and best_optimizer_state is not None:
+        model.load_state_dict(best_model_state)
+        optimizer.load_state_dict(best_optimizer_state)
     truth, estimate = _collect_regression(model, validation_loader, device, scalers)
     physical_metrics = regression_metrics(truth, estimate, target_names=TARGET_NAMES)
     plot_learning_curves(history, output / "learning_curves.png")
@@ -242,6 +279,17 @@ def run_regression_experiment(
         "run_config": asdict(config),
         "model_config": model_config.to_dict(),
         "history": history,
+        "early_stopping": {
+            "enabled": config.early_stopping_patience is not None,
+            "patience": config.early_stopping_patience,
+            "min_delta": config.early_stopping_min_delta,
+            "maximum_epochs": config.epochs,
+            "epochs_completed": len(history["epoch"]),
+            "stopped_early": stopped_early,
+            "best_epoch": best_epoch,
+            "best_validation_loss": best_validation_loss,
+            "restored_best_weights": best_model_state is not None,
+        },
         "validation_metrics_physical_units": physical_metrics,
         "validation_samples": len(validation_data),
     }
@@ -250,7 +298,7 @@ def run_regression_experiment(
         output / "checkpoint.pt",
         model,
         optimizer=optimizer,
-        epoch=config.epochs,
+        epoch=best_epoch if best_model_state is not None else len(history["epoch"]),
         config=model_config,
         scalers=scalers,
         split=split,
