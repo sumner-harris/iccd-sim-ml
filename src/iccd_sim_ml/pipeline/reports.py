@@ -107,6 +107,19 @@ def plot_regression_parity(
         padding = max((high - low) * 0.08, max(abs(low), abs(high), 1.0) * 1.0e-6)
         axis.plot([low - padding, high + padding], [low - padding, high + padding], "k--")
         axis.scatter(truth[:, index], estimate[:, index], s=42, alpha=0.8)
+        denominator = float(np.sum((truth[:, index] - np.mean(truth[:, index])) ** 2))
+        numerator = float(np.sum((estimate[:, index] - truth[:, index]) ** 2))
+        r2 = float("nan") if denominator == 0.0 else 1.0 - numerator / denominator
+        r2_label = "undefined" if not np.isfinite(r2) else f"{r2:.4f}"
+        axis.text(
+            0.04,
+            0.96,
+            rf"$R^2$ = {r2_label}",
+            transform=axis.transAxes,
+            ha="left",
+            va="top",
+            bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
+        )
         axis.set(
             xlabel=f"true {name}",
             ylabel=f"predicted {name}",
@@ -129,15 +142,70 @@ def plot_confusion_matrix(
     if matrix.shape != (len(class_names), len(class_names)):
         raise ValueError("Confusion matrix shape does not match class_names")
     destination = _destination(path)
-    figure, axis = plt.subplots(figsize=(5.5, 4.8), constrained_layout=True)
+    side = max(6.0, min(16.0, 3.0 + 0.28 * len(class_names)))
+    figure, axis = plt.subplots(figsize=(side, side), constrained_layout=True)
     image = axis.imshow(matrix, cmap="Blues")
-    for row in range(matrix.shape[0]):
-        for column in range(matrix.shape[1]):
-            axis.text(column, row, str(matrix[row, column]), ha="center", va="center")
-    axis.set_xticks(range(len(class_names)), class_names)
-    axis.set_yticks(range(len(class_names)), class_names)
+    if len(class_names) <= 15:
+        for row in range(matrix.shape[0]):
+            for column in range(matrix.shape[1]):
+                axis.text(column, row, str(matrix[row, column]), ha="center", va="center")
+    axis.set_xticks(range(len(class_names)), class_names, rotation=90, fontsize=7)
+    axis.set_yticks(range(len(class_names)), class_names, fontsize=7)
     axis.set(xlabel="predicted class", ylabel="true class", title="Validation confusion matrix")
     figure.colorbar(image, ax=axis, label="samples")
+    figure.savefig(destination, dpi=180)
+    plt.close(figure)
+    return destination
+
+
+def plot_classification_report(
+    metrics: dict[str, Any],
+    class_names: tuple[str, ...],
+    path: str | Path,
+) -> Path:
+    """Plot per-class precision, recall, and F1 with validation support."""
+
+    per_class = metrics.get("per_class")
+    if not isinstance(per_class, dict) or len(per_class) != len(class_names):
+        raise ValueError("Classification metrics do not match class_names")
+    values = np.asarray(
+        [
+            [
+                per_class[str(index)]["precision"],
+                per_class[str(index)]["recall"],
+                per_class[str(index)]["f1"],
+            ]
+            for index in range(len(class_names))
+        ],
+        dtype=np.float64,
+    )
+    supports = [int(per_class[str(index)]["support"]) for index in range(len(class_names))]
+    if not np.isfinite(values).all():
+        raise ValueError("Classification report contains non-finite values")
+    destination = _destination(path)
+    height = max(6.0, min(16.0, 2.0 + 0.28 * len(class_names)))
+    figure, axis = plt.subplots(figsize=(7.5, height), constrained_layout=True)
+    image = axis.imshow(values, cmap="viridis", vmin=0.0, vmax=1.0, aspect="auto")
+    for row in range(values.shape[0]):
+        for column in range(values.shape[1]):
+            axis.text(
+                column,
+                row,
+                f"{values[row, column]:.2f}",
+                ha="center",
+                va="center",
+                color="white" if values[row, column] < 0.55 else "black",
+                fontsize=7,
+            )
+    labels = [f"{name} (n={support})" for name, support in zip(class_names, supports, strict=True)]
+    axis.set_xticks(range(3), ("precision", "recall", "F1"))
+    axis.set_yticks(range(len(class_names)), labels, fontsize=7)
+    axis.set_title(
+        "Validation classification report\n"
+        f"accuracy={metrics['accuracy']:.3f}, macro F1={metrics['f1_macro']:.3f}, "
+        f"weighted F1={metrics['f1_weighted']:.3f}"
+    )
+    figure.colorbar(image, ax=axis, label="score")
     figure.savefig(destination, dpi=180)
     plt.close(figure)
     return destination

@@ -38,10 +38,12 @@ from iccd_sim_ml.training import (
     save_checkpoint,
     train_joint_one_epoch,
     train_one_epoch,
+    video_generation_metrics,
 )
 
 from .cache import CONDITION_NAMES, TARGET_NAMES
 from .reports import (
+    plot_classification_report,
     plot_confusion_matrix,
     plot_generation_error_maps,
     plot_learning_curves,
@@ -354,9 +356,21 @@ def run_classification_experiment(
         "validation_loss": [],
         "train_accuracy": [],
         "validation_accuracy": [],
+        "train_seconds": [],
+        "validation_seconds": [],
+        "epoch_seconds": [],
     }
     final_validation: dict[str, Any] = {}
+    best_validation_loss = float("inf")
+    best_epoch = 0
+    epochs_without_improvement = 0
+    best_model_state: dict[str, Any] | None = None
+    best_optimizer_state: dict[str, Any] | None = None
+    best_validation_metrics: dict[str, Any] | None = None
+    stopped_early = False
     for epoch in range(config.epochs):
+        _synchronize(device)
+        epoch_started = time.perf_counter()
         training = train_one_epoch(
             model,
             train_loader,
@@ -364,24 +378,73 @@ def run_classification_experiment(
             criterion,
             device=device,
             task="classification",
+            num_classes=len(class_names),
         )
+        _synchronize(device)
+        training_finished = time.perf_counter()
         final_validation = evaluate_epoch(
             model,
             validation_loader,
             criterion,
             device=device,
             task="classification",
+            num_classes=len(class_names),
         )
+        _synchronize(device)
+        validation_finished = time.perf_counter()
         history["epoch"].append(epoch + 1)
         history["train_loss"].append(training["loss"])
         history["validation_loss"].append(final_validation["loss"])
         history["train_accuracy"].append(training["accuracy"])
         history["validation_accuracy"].append(final_validation["accuracy"])
+        history["train_seconds"].append(training_finished - epoch_started)
+        history["validation_seconds"].append(validation_finished - training_finished)
+        history["epoch_seconds"].append(validation_finished - epoch_started)
+        print(
+            f"classification epoch {epoch + 1}/{config.epochs}: "
+            f"train={history['train_seconds'][-1]:.2f}s, "
+            f"validation={history['validation_seconds'][-1]:.2f}s, "
+            f"total={history['epoch_seconds'][-1]:.2f}s",
+            flush=True,
+        )
+        validation_loss = float(final_validation["loss"])
+        if validation_loss < best_validation_loss - config.early_stopping_min_delta:
+            best_validation_loss = validation_loss
+            best_epoch = epoch + 1
+            epochs_without_improvement = 0
+            if config.early_stopping_patience is not None:
+                best_model_state = copy.deepcopy(model.state_dict())
+                best_optimizer_state = copy.deepcopy(optimizer.state_dict())
+                best_validation_metrics = copy.deepcopy(final_validation)
+        else:
+            epochs_without_improvement += 1
+        if (
+            config.early_stopping_patience is not None
+            and epochs_without_improvement >= config.early_stopping_patience
+        ):
+            stopped_early = True
+            print(
+                f"classification early stopping after epoch {epoch + 1}; "
+                f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
+                flush=True,
+            )
+            break
+    if best_model_state is not None and best_optimizer_state is not None:
+        model.load_state_dict(best_model_state)
+        optimizer.load_state_dict(best_optimizer_state)
+        if best_validation_metrics is None:  # pragma: no cover - defensive invariant
+            raise AssertionError("Best classification metrics were not retained")
+        final_validation = best_validation_metrics
     plot_learning_curves(history, output / "learning_curves.png")
     plot_confusion_matrix(
         np.asarray(final_validation["confusion_matrix"]),
         class_names,
         output / "confusion_matrix.png",
+    )
+    plot_classification_report(
+        final_validation,
+        class_names,
+        output / "classification_report.png",
     )
     summary = {
         "model": "VideoClassifier",
@@ -390,6 +453,17 @@ def run_classification_experiment(
         "model_config": model_config.to_dict(),
         "class_names": class_names,
         "history": history,
+        "early_stopping": {
+            "enabled": config.early_stopping_patience is not None,
+            "patience": config.early_stopping_patience,
+            "min_delta": config.early_stopping_min_delta,
+            "maximum_epochs": config.epochs,
+            "epochs_completed": len(history["epoch"]),
+            "stopped_early": stopped_early,
+            "best_epoch": best_epoch,
+            "best_validation_loss": best_validation_loss,
+            "restored_best_weights": best_model_state is not None,
+        },
         "validation_metrics": final_validation,
         "validation_samples": len(validation_data),
     }
@@ -398,7 +472,7 @@ def run_classification_experiment(
         output / "checkpoint.pt",
         model,
         optimizer=optimizer,
-        epoch=config.epochs,
+        epoch=best_epoch if best_model_state is not None else len(history["epoch"]),
         config=model_config,
         scalers=scalers,
         split=split,
@@ -462,8 +536,10 @@ def _collect_joint_outputs(
             classes.append(class_index.cpu().numpy())
             logits.append(class_logits.cpu().numpy())
             sample_ids.extend(batch["sample_id"])
-    video_array = np.concatenate(videos)
-    generated_array = np.concatenate(generated)
+    scaled_video_array = np.concatenate(videos)
+    scaled_generated_array = np.concatenate(generated)
+    video_array = scaled_video_array
+    generated_array = scaled_generated_array
     target_array = np.concatenate(targets)
     prediction_array = np.concatenate(predictions)
     if scalers.video is not None:
@@ -475,6 +551,8 @@ def _collect_joint_outputs(
     return {
         "videos": np.maximum(video_array, 0.0),
         "generated": np.maximum(generated_array, 0.0),
+        "scaled_videos": scaled_video_array,
+        "scaled_generated": scaled_generated_array,
         "targets": target_array,
         "predictions": prediction_array,
         "classes": np.concatenate(classes),
@@ -534,6 +612,13 @@ def run_joint_cvae_experiment(
     history["validation_seconds"] = []
     history["epoch_seconds"] = []
     final_validation: dict[str, Any] = {}
+    best_validation_loss = float("inf")
+    best_epoch = 0
+    epochs_without_improvement = 0
+    best_model_state: dict[str, Any] | None = None
+    best_optimizer_state: dict[str, Any] | None = None
+    best_validation_metrics: dict[str, Any] | None = None
+    stopped_early = False
     for epoch in range(config.epochs):
         _synchronize(device)
         epoch_started = time.perf_counter()
@@ -581,6 +666,34 @@ def run_joint_cvae_experiment(
             f"total={history['epoch_seconds'][-1]:.2f}s",
             flush=True,
         )
+        validation_loss = float(final_validation["loss"])
+        if validation_loss < best_validation_loss - config.early_stopping_min_delta:
+            best_validation_loss = validation_loss
+            best_epoch = epoch + 1
+            epochs_without_improvement = 0
+            if config.early_stopping_patience is not None:
+                best_model_state = copy.deepcopy(model.state_dict())
+                best_optimizer_state = copy.deepcopy(optimizer.state_dict())
+                best_validation_metrics = copy.deepcopy(final_validation)
+        else:
+            epochs_without_improvement += 1
+        if (
+            config.early_stopping_patience is not None
+            and epochs_without_improvement >= config.early_stopping_patience
+        ):
+            stopped_early = True
+            print(
+                f"joint_cvae early stopping after epoch {epoch + 1}; "
+                f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
+                flush=True,
+            )
+            break
+    if best_model_state is not None and best_optimizer_state is not None:
+        model.load_state_dict(best_model_state)
+        optimizer.load_state_dict(best_optimizer_state)
+        if best_validation_metrics is None:  # pragma: no cover - defensive invariant
+            raise AssertionError("Best joint-CVAE metrics were not retained")
+        final_validation = best_validation_metrics
     collected = _collect_joint_outputs(model, validation_loader, device, scalers)
     plot_learning_curves(history, output / "learning_curves.png")
     plot_generation_error_maps(
@@ -599,6 +712,24 @@ def run_joint_cvae_experiment(
     predicted_classes = np.argmax(collected["logits"], axis=1)
     np.add.at(confusion, (collected["classes"], predicted_classes), 1)
     plot_confusion_matrix(confusion, class_names, output / "confusion_matrix.png")
+    plot_classification_report(
+        final_validation["classification_metrics"],
+        class_names,
+        output / "classification_report.png",
+    )
+    generation_metrics_scaled = video_generation_metrics(
+        collected["scaled_videos"], collected["scaled_generated"]
+    )
+    physical_residual = collected["generated"] - collected["videos"]
+    physical_truth_l1 = float(np.sum(np.abs(collected["videos"])))
+    generation_metrics_physical = {
+        "mae": float(np.mean(np.abs(physical_residual))),
+        "rmse": float(np.sqrt(np.mean(physical_residual * physical_residual))),
+        "relative_l1": float(
+            np.sum(np.abs(physical_residual))
+            / max(physical_truth_l1, np.finfo(np.float64).eps)
+        ),
+    }
     summary = {
         "model": "JointConditionalVAE",
         "device": str(device),
@@ -606,10 +737,23 @@ def run_joint_cvae_experiment(
         "model_config": model_config.to_dict(),
         "class_names": class_names,
         "history": history,
+        "early_stopping": {
+            "enabled": config.early_stopping_patience is not None,
+            "patience": config.early_stopping_patience,
+            "min_delta": config.early_stopping_min_delta,
+            "maximum_epochs": config.epochs,
+            "epochs_completed": len(history["epoch"]),
+            "stopped_early": stopped_early,
+            "best_epoch": best_epoch,
+            "best_validation_loss": best_validation_loss,
+            "restored_best_weights": best_model_state is not None,
+        },
         "validation_metrics": final_validation,
         "validation_generation_mae": float(
             np.mean(np.abs(collected["generated"] - collected["videos"]))
         ),
+        "validation_generation_metrics_standardized_log_radiance": generation_metrics_scaled,
+        "validation_generation_metrics_physical_radiance": generation_metrics_physical,
         "validation_samples": len(validation_data),
     }
     save_metrics_json(output / "metrics.json", summary)
@@ -617,7 +761,7 @@ def run_joint_cvae_experiment(
         output / "checkpoint.pt",
         model,
         optimizer=optimizer,
-        epoch=config.epochs,
+        epoch=best_epoch if best_model_state is not None else len(history["epoch"]),
         config=model_config,
         scalers=scalers,
         split=split,

@@ -109,6 +109,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Persistent split manifest. Defaults to OUTPUT_DIR/split.json.",
     )
     parser.add_argument(
+        "--scalers-file",
+        type=Path,
+        help="Saved train-only scaler bundle. Defaults to OUTPUT_DIR/scalers.json.",
+    )
+    parser.add_argument(
         "--regenerate-split",
         action="store_true",
         help="Intentionally replace an existing split instead of reusing it.",
@@ -327,7 +332,11 @@ def main(argv: list[str] | None = None) -> int:
         f"validation={len(split.validation)}, test={len(split.test)} at {split_path}",
         flush=True,
     )
-    scalers_path = output_dir / "scalers.json"
+    scalers_path = (
+        output_dir / "scalers.json"
+        if args.scalers_file is None
+        else args.scalers_file.expanduser().resolve()
+    )
     scalers_state = "fitted"
     if scalers_path.is_file() and split_state == "loaded" and not args.refit_scalers:
         scalers = ScalerBundle.from_dict(

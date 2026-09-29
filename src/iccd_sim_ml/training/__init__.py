@@ -5,7 +5,7 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-from .metrics import classification_metrics, regression_metrics
+from .metrics import classification_metrics, regression_metrics, video_generation_metrics
 
 _LAZY_EXPORTS = {
     "JointLossConfig": (".joint", "JointLossConfig"),
@@ -33,6 +33,7 @@ __all__ = [
     "save_checkpoint",
     "train_one_epoch",
     "train_joint_one_epoch",
+    "video_generation_metrics",
 ]
 
 

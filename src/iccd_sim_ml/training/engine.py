@@ -41,12 +41,13 @@ def _finish_metrics(
     predictions: list[torch.Tensor],
     *,
     target_names: Sequence[str] = (),
+    num_classes: int | None = None,
 ) -> dict[str, Any]:
     truth = torch.cat(targets).numpy()
     estimate = torch.cat(predictions).numpy()
     if task == "regression":
         return regression_metrics(truth, estimate, target_names=target_names)
-    return classification_metrics(truth, estimate)
+    return classification_metrics(truth, estimate, num_classes=num_classes)
 
 
 def train_one_epoch(
@@ -58,6 +59,7 @@ def train_one_epoch(
     device: torch.device | str,
     task: Task,
     target_names: Sequence[str] = (),
+    num_classes: int | None = None,
     max_grad_norm: float | None = None,
 ) -> dict[str, Any]:
     """Train for one epoch and return sample-weighted loss and task metrics."""
@@ -84,7 +86,13 @@ def train_one_epoch(
         all_predictions.append(output.detach().cpu())
     if sample_count == 0:
         raise ValueError("Cannot train on an empty loader")
-    metrics = _finish_metrics(task, all_targets, all_predictions, target_names=target_names)
+    metrics = _finish_metrics(
+        task,
+        all_targets,
+        all_predictions,
+        target_names=target_names,
+        num_classes=num_classes,
+    )
     return {"loss": loss_sum / sample_count, **metrics}
 
 
@@ -96,6 +104,7 @@ def evaluate_epoch(
     device: torch.device | str,
     task: Task,
     target_names: Sequence[str] = (),
+    num_classes: int | None = None,
 ) -> dict[str, Any]:
     """Evaluate one epoch without gradients."""
 
@@ -117,5 +126,11 @@ def evaluate_epoch(
             all_predictions.append(output.detach().cpu())
     if sample_count == 0:
         raise ValueError("Cannot evaluate an empty loader")
-    metrics = _finish_metrics(task, all_targets, all_predictions, target_names=target_names)
+    metrics = _finish_metrics(
+        task,
+        all_targets,
+        all_predictions,
+        target_names=target_names,
+        num_classes=num_classes,
+    )
     return {"loss": loss_sum / sample_count, **metrics}

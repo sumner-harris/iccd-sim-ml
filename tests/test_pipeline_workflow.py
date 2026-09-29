@@ -15,6 +15,7 @@ from iccd_sim_ml.pipeline.cache import (
     ensure_proxy_cache,
 )
 from iccd_sim_ml.pipeline.reports import (
+    plot_classification_report,
     plot_confusion_matrix,
     plot_generation_error_maps,
     plot_learning_curves,
@@ -149,6 +150,19 @@ def test_report_plotters_write_expected_artifacts(tmp_path: Path) -> None:
         tmp_path / "parity.png",
     )
     plot_confusion_matrix(np.asarray([[1, 0], [0, 1]]), ("A", "B"), tmp_path / "confusion.png")
+    plot_classification_report(
+        {
+            "accuracy": 1.0,
+            "f1_macro": 1.0,
+            "f1_weighted": 1.0,
+            "per_class": {
+                "0": {"precision": 1.0, "recall": 1.0, "f1": 1.0, "support": 1},
+                "1": {"precision": 1.0, "recall": 1.0, "f1": 1.0, "support": 1},
+            },
+        },
+        ("A", "B"),
+        tmp_path / "classification-report.png",
+    )
     video = np.ones((2, 1, 2, 4, 4), dtype=np.float64)
     plot_generation_error_maps(
         video, video * 0.9, ("sample-a", "sample-b"), tmp_path / "errors.png"
@@ -156,5 +170,11 @@ def test_report_plotters_write_expected_artifacts(tmp_path: Path) -> None:
 
     assert all(
         (tmp_path / name).is_file()
-        for name in ("learning.png", "parity.png", "confusion.png", "errors.png")
+        for name in (
+            "learning.png",
+            "parity.png",
+            "confusion.png",
+            "classification-report.png",
+            "errors.png",
+        )
     )

@@ -68,9 +68,10 @@ Remove `--prepare-only` and select `--models regression`, `classification`,
 `joint_cvae`, or `all` to train. Use `--architecture standard` for production;
 the default `smoke` architecture exists only for fast integration tests.
 
-For a production regression run, `--early-stopping-patience N` monitors
-validation loss, stops after `N` consecutive non-improving epochs, and restores
-the best model and optimizer state before final metrics and checkpoint output.
+For a production run, `--early-stopping-patience N` monitors validation loss,
+stops after `N` consecutive non-improving epochs, and restores the best model
+and optimizer state before final metrics and checkpoint output. This applies to
+regression, classification, and the joint CVAE.
 `--early-stopping-min-delta` sets the minimum absolute loss improvement and
 defaults to zero. Early stopping is disabled when patience is omitted.
 
@@ -89,6 +90,23 @@ Available split strategies are:
   unseen-material regression/generation evaluation;
 - `legacy`: reproduces the original global 70/30 same-material regime and has
   no test partition.
+
+`scripts/run_production_training_queue.py` executes regression,
+classification, and joint-CVAE jobs sequentially for both production splits on
+one GPU. It reuses the saved split/scaler artifacts and skips an existing
+checkpoint unless `--rerun-completed` is supplied. Closed-set classification
+on the element-held-out split is retained as a diagnostic only: its validation
+classes were not observed during training, so low scores are expected and do
+not measure the normal known-class classification task.
+
+Regression parity panels report per-property coefficient of determination
+(`R²`). Classification reports include accuracy, balanced accuracy, per-class
+precision/recall/F1/support, and macro, weighted, and micro averages. Joint-CVAE
+generation reporting includes MAE, RMSE, relative L1 error, PSNR, spatial SSIM,
+Pearson correlation, and temporal-difference MAE in standardized log-radiance
+space, plus physical-radiance MAE/RMSE/relative-L1 values. FID/FVD are not used
+by default because natural-image feature networks are not validated for these
+single-channel plasma-radiance videos.
 
 ## Smoke-test cache versus scientific cache
 
