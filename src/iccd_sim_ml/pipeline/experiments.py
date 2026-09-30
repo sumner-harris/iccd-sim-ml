@@ -12,6 +12,8 @@ import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data.distributed import DistributedSampler
 
 from iccd_sim_ml.data import (
     DatasetManifest,
@@ -40,6 +42,7 @@ from iccd_sim_ml.training import (
     train_one_epoch,
     video_generation_metrics,
 )
+from iccd_sim_ml.training.distributed import get_context, sum_across_processes
 
 from .cache import CONDITION_NAMES, TARGET_NAMES
 from .reports import (
@@ -88,6 +91,9 @@ def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> S
 
 
 def _device(config: TrainingRunConfig) -> torch.device:
+    context = get_context()
+    if context.enabled:
+        return torch.device("cuda", context.local_rank)    
     if config.device == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device(config.device)
@@ -112,14 +118,52 @@ def _synchronize(device: torch.device) -> None:
 
 def _loader(dataset: Any, config: TrainingRunConfig, *, shuffle: bool) -> DataLoader:
     generator = torch.Generator().manual_seed(config.seed)
+    # return DataLoader(
+    #     dataset,
+    #     batch_size=config.batch_size,
+    #     shuffle=shuffle,
+    #     num_workers=config.num_workers,
+    #     generator=generator,
+    #     persistent_workers=config.num_workers > 0,
+    # )
+    sampler = None
+    if shuffle and get_context().enabled:
+        sampler = DistributedSampler(dataset, shuffle=True, seed=config.seed)
+        shuffle = False
     return DataLoader(
         dataset,
         batch_size=config.batch_size,
         shuffle=shuffle,
+        sampler=sampler,
         num_workers=config.num_workers,
         generator=generator,
         persistent_workers=config.num_workers > 0,
-    )
+    )    
+
+
+def _training_model(model: nn.Module, device: torch.device) -> tuple[nn.Module, nn.Module]:
+    ## wrap train model with DDP
+    if not get_context().enabled:
+        return model, model
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
+    return model, DistributedDataParallel(model, device_ids=[device.index])
+
+
+def _start_epoch(loader: DataLoader, epoch: int) -> None:
+    ## per epoch shuffle so each device gets different training samples per epchs
+    if isinstance(loader.sampler, DistributedSampler):
+        loader.sampler.set_epoch(epoch)
+
+
+def _shared_loss(value: float) -> float:
+    ## avg loss
+    return sum_across_processes(value) / get_context().world_size
+
+
+def _log(*args: Any, **kwargs: Any) -> None:
+    ## print by main only
+    if get_context().is_main:
+        print(*args, **kwargs)    
 
 
 def _encoder(config: TrainingRunConfig) -> VideoEncoderConfig:
@@ -191,6 +235,7 @@ def run_regression_experiment(
         num_targets=len(TARGET_NAMES),
     )
     model = VideoRegressor(model_config).to(device)
+    model, train_model = _training_model(model, device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
@@ -211,10 +256,11 @@ def run_regression_experiment(
     best_optimizer_state: dict[str, Any] | None = None
     stopped_early = False
     for epoch in range(config.epochs):
+        _start_epoch(train_loader, epoch)
         _synchronize(device)
         epoch_started = time.perf_counter()
         training = train_one_epoch(
-            model,
+            train_model,
             train_loader,
             optimizer,
             criterion,
@@ -240,14 +286,14 @@ def run_regression_experiment(
         history["train_seconds"].append(training_finished - epoch_started)
         history["validation_seconds"].append(validation_finished - training_finished)
         history["epoch_seconds"].append(validation_finished - epoch_started)
-        print(
+        _log(
             f"regression epoch {epoch + 1}/{config.epochs}: "
             f"train={history['train_seconds'][-1]:.2f}s, "
             f"validation={history['validation_seconds'][-1]:.2f}s, "
             f"total={history['epoch_seconds'][-1]:.2f}s",
             flush=True,
         )
-        validation_loss = float(final_validation["loss"])
+        validation_loss = _shared_loss(float(final_validation["loss"]))
         if validation_loss < best_validation_loss - config.early_stopping_min_delta:
             best_validation_loss = validation_loss
             best_epoch = epoch + 1
@@ -262,7 +308,7 @@ def run_regression_experiment(
             and epochs_without_improvement >= config.early_stopping_patience
         ):
             stopped_early = True
-            print(
+            _log(
                 f"regression early stopping after epoch {epoch + 1}; "
                 f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
                 flush=True,
@@ -273,6 +319,8 @@ def run_regression_experiment(
         optimizer.load_state_dict(best_optimizer_state)
     truth, estimate = _collect_regression(model, validation_loader, device, scalers)
     physical_metrics = regression_metrics(truth, estimate, target_names=TARGET_NAMES)
+    if not get_context().is_main:
+        return {}    
     plot_learning_curves(history, output / "learning_curves.png")
     plot_regression_parity(truth, estimate, TARGET_NAMES, output / "parity.png")
     summary = {
@@ -346,6 +394,7 @@ def run_classification_experiment(
         num_classes=len(class_names),
     )
     model = VideoClassifier(model_config).to(device)
+    model, train_model = _training_model(model, device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
@@ -369,10 +418,11 @@ def run_classification_experiment(
     best_validation_metrics: dict[str, Any] | None = None
     stopped_early = False
     for epoch in range(config.epochs):
+        _start_epoch(train_loader, epoch)
         _synchronize(device)
         epoch_started = time.perf_counter()
         training = train_one_epoch(
-            model,
+            train_model,
             train_loader,
             optimizer,
             criterion,
@@ -400,14 +450,14 @@ def run_classification_experiment(
         history["train_seconds"].append(training_finished - epoch_started)
         history["validation_seconds"].append(validation_finished - training_finished)
         history["epoch_seconds"].append(validation_finished - epoch_started)
-        print(
+        _log(
             f"classification epoch {epoch + 1}/{config.epochs}: "
             f"train={history['train_seconds'][-1]:.2f}s, "
             f"validation={history['validation_seconds'][-1]:.2f}s, "
             f"total={history['epoch_seconds'][-1]:.2f}s",
             flush=True,
         )
-        validation_loss = float(final_validation["loss"])
+        validation_loss = _shared_loss(float(final_validation["loss"]))
         if validation_loss < best_validation_loss - config.early_stopping_min_delta:
             best_validation_loss = validation_loss
             best_epoch = epoch + 1
@@ -423,7 +473,7 @@ def run_classification_experiment(
             and epochs_without_improvement >= config.early_stopping_patience
         ):
             stopped_early = True
-            print(
+            _log(
                 f"classification early stopping after epoch {epoch + 1}; "
                 f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
                 flush=True,
@@ -435,6 +485,8 @@ def run_classification_experiment(
         if best_validation_metrics is None:  # pragma: no cover - defensive invariant
             raise AssertionError("Best classification metrics were not retained")
         final_validation = best_validation_metrics
+    if not get_context().is_main:
+        return {}        
     plot_learning_curves(history, output / "learning_curves.png")
     plot_confusion_matrix(
         np.asarray(final_validation["confusion_matrix"]),
@@ -597,6 +649,7 @@ def run_joint_cvae_experiment(
     validation_loader = _loader(validation_data, config, shuffle=False)
     model_config = _joint_model_config(config, video_shape, len(class_names))
     model = JointConditionalVAE(model_config).to(device)
+    model, train_model = _training_model(model, device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
@@ -620,11 +673,12 @@ def run_joint_cvae_experiment(
     best_validation_metrics: dict[str, Any] | None = None
     stopped_early = False
     for epoch in range(config.epochs):
+        _start_epoch(train_loader, epoch)
         _synchronize(device)
         epoch_started = time.perf_counter()
         warmup = min(1.0, (epoch + 1) / max(config.epochs, 1))
         training = train_joint_one_epoch(
-            model,
+            train_model,
             train_loader,
             optimizer,
             device=device,
@@ -659,14 +713,14 @@ def run_joint_cvae_experiment(
         history["train_seconds"].append(training_finished - epoch_started)
         history["validation_seconds"].append(validation_finished - training_finished)
         history["epoch_seconds"].append(validation_finished - epoch_started)
-        print(
+        _log(
             f"joint_cvae epoch {epoch + 1}/{config.epochs}: "
             f"train={history['train_seconds'][-1]:.2f}s, "
             f"validation={history['validation_seconds'][-1]:.2f}s, "
             f"total={history['epoch_seconds'][-1]:.2f}s",
             flush=True,
         )
-        validation_loss = float(final_validation["loss"])
+        validation_loss = _shared_loss(float(final_validation["loss"]))
         if validation_loss < best_validation_loss - config.early_stopping_min_delta:
             best_validation_loss = validation_loss
             best_epoch = epoch + 1
@@ -682,7 +736,7 @@ def run_joint_cvae_experiment(
             and epochs_without_improvement >= config.early_stopping_patience
         ):
             stopped_early = True
-            print(
+            _log(
                 f"joint_cvae early stopping after epoch {epoch + 1}; "
                 f"best epoch={best_epoch}, best validation loss={best_validation_loss:.6g}",
                 flush=True,
@@ -695,6 +749,8 @@ def run_joint_cvae_experiment(
             raise AssertionError("Best joint-CVAE metrics were not retained")
         final_validation = best_validation_metrics
     collected = _collect_joint_outputs(model, validation_loader, device, scalers)
+    if not get_context().is_main:
+        return {}
     plot_learning_curves(history, output / "learning_curves.png")
     plot_generation_error_maps(
         collected["videos"],

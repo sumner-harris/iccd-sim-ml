@@ -24,6 +24,7 @@ from iccd_sim_ml.pipeline import (
     subset_manifest,
 )
 from iccd_sim_ml.pipeline.reports import save_metrics_json
+from iccd_sim_ml.training.distributed import cleanup_distributed, get_context, setup_distributed
 
 DEFAULT_PRODUCTION_IMAGING_CONFIG = (
     Path(__file__).resolve().parents[1] / "configs" / "continuum_ml_typical_8us.json"
@@ -386,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
         "prepare_only": args.prepare_only,
         "results": results,
     }
+    if not get_context().is_main:
+        return 0    
     save_metrics_json(output_dir / "pipeline_summary.json", summary)
     print(
         json.dumps(
@@ -400,6 +403,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     return 0
 
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    setup_distributed()
+    try:
+        raise SystemExit(main())
+    finally:
+        cleanup_distributed()    

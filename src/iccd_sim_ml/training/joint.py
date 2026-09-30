@@ -21,6 +21,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - optional environment
     raise
 
 from ..data.scalers import ArrayStandardizer
+from .distributed import gather_across_processes, sum_across_processes
 from .metrics import classification_metrics, regression_metrics
 
 if TYPE_CHECKING:
@@ -326,6 +327,15 @@ def _joint_epoch(
             )
             class_targets.append(class_index.detach().cpu())
             class_logits.append(_output_tensor(output, "class_logits").detach().cpu())
+
+    ## add across distributions
+    if training:
+        totals = {name: sum_across_processes(total) for name, total in totals.items()}
+        sample_count = int(sum_across_processes(sample_count))
+        targets = gather_across_processes(targets)
+        property_predictions = gather_across_processes(property_predictions)
+        class_targets = gather_across_processes(class_targets)
+        class_logits = gather_across_processes(class_logits)            
 
     if sample_count == 0:
         raise ValueError("Cannot run a joint epoch on an empty loader")

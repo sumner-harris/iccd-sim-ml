@@ -16,6 +16,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - optional environment
         ) from exc
     raise
 
+from .distributed import gather_across_processes, sum_across_processes
 from .metrics import classification_metrics, regression_metrics
 
 Task = Literal["regression", "classification"]
@@ -84,6 +85,13 @@ def train_one_epoch(
         sample_count += batch_size
         all_targets.append(target.detach().cpu())
         all_predictions.append(output.detach().cpu())
+
+    ## add losses, sample counts, preds
+    loss_sum = sum_across_processes(loss_sum)
+    sample_count = int(sum_across_processes(sample_count))
+    all_targets = gather_across_processes(all_targets)
+    all_predictions = gather_across_processes(all_predictions)
+    
     if sample_count == 0:
         raise ValueError("Cannot train on an empty loader")
     metrics = _finish_metrics(
