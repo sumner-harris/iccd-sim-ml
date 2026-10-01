@@ -997,8 +997,13 @@ def run_material_set_experiment(
         target_names=TARGET_NAMES,
         criterion=criterion,
     )
+    initial_label = (
+        "pretrained-mean baseline"
+        if pretrained_checkpoint is not None
+        else "random-initialization baseline"
+    )
     print(
-        f"{model_choice} pretrained-mean baseline: "
+        f"{model_choice} {initial_label}: "
         f"validation_loss={initial_validation['loss']:.6g}, "
         f"set_R2={initial_validation['bag_metrics']['r2_macro']:.4f}",
         flush=True,
@@ -1131,7 +1136,8 @@ def run_material_set_experiment(
             "restored_best_weights": best_model_state is not None,
         },
         "pretrained_regressor": config.set_pretrained_regressor,
-        "pretrained_mean_baseline": {
+        "initial_validation": {
+            "kind": initial_label,
             "loss": initial_validation["loss"],
             "set": initial_validation["bag_metrics"],
             "material_ensemble": initial_validation["material_metrics"],
