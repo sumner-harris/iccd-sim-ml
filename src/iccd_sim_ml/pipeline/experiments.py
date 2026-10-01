@@ -864,15 +864,39 @@ def _initialize_set_encoder(
         for name, value in state.items()
         if name.startswith("encoder.")
     }
-    condition_state = {
-        name.removeprefix("condition_encoder."): value
+    condition_prefix = "condition_encoder.layers."
+    condition_weights = sorted(
+        (
+            (int(name.split(".")[2]), value)
+            for name, value in state.items()
+            if name.startswith(condition_prefix) and name.endswith(".weight")
+        ),
+        key=lambda item: item[0],
+    )
+    condition_biases = {
+        int(name.split(".")[2]): value
         for name, value in state.items()
-        if name.startswith("condition_encoder.")
+        if name.startswith(condition_prefix) and name.endswith(".bias")
     }
-    if not encoder_state or not condition_state:
+    if not encoder_state or not condition_weights:
         raise ValueError("Pretrained checkpoint lacks encoder or condition-encoder weights")
     model.encoder.load_state_dict(encoder_state, strict=True)
-    model.condition_encoder.load_state_dict(condition_state, strict=True)
+    destination_layers = [
+        module for module in model.condition_encoder.modules() if isinstance(module, nn.Linear)
+    ]
+    if len(destination_layers) != len(condition_weights):
+        raise ValueError("Pretrained condition encoder has an incompatible number of layers")
+    with torch.no_grad():
+        for destination, (source_index, source_weight) in zip(
+            destination_layers, condition_weights, strict=True
+        ):
+            source_bias = condition_biases.get(source_index)
+            if source_bias is None:
+                raise ValueError("Pretrained condition encoder is missing a linear-layer bias")
+            if destination.weight.shape != source_weight.shape:
+                raise ValueError("Pretrained condition-encoder weight shape is incompatible")
+            destination.weight.copy_(source_weight)
+            destination.bias.copy_(source_bias)
 
 
 def run_material_set_experiment(
