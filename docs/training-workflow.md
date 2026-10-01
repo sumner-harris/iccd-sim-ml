@@ -109,6 +109,10 @@ zero-initialized, permutation-invariant residual learned from the set. The
 epoch-zero validation result is therefore exactly the simple prediction-average
 baseline and is eligible for checkpoint restoration. Set training cannot erase
 that baseline merely because a newly initialized aggregation head overfits.
+Set `--set-encoder-learning-rate-scale 0` to freeze the complete pretrained
+baseline, including its batch-normalization state, and train only the set
+residual. This is the recommended first experiment when the number of distinct
+training materials is small; nonzero fine-tuning is a later ablation.
 
 For a production run, `--early-stopping-patience N` monitors validation loss,
 stops after `N` consecutive non-improving epochs, and restores the best model

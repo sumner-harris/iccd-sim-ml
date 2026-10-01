@@ -162,3 +162,19 @@ def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction(
     actual = set_model(videos, conditions)
 
     assert torch.allclose(actual, expected, atol=1.0e-6, rtol=1.0e-6)
+
+    set_model.freeze_pretrained_baseline()
+    set_model.train()
+    assert not set_model.encoder.training
+    assert not set_model.condition_encoder.training
+    assert not set_model.baseline_head.training
+    assert set_model.token_encoder.training
+    assert not any(
+        parameter.requires_grad
+        for module in (
+            set_model.encoder,
+            set_model.condition_encoder,
+            set_model.baseline_head,
+        )
+        for parameter in module.parameters()
+    )

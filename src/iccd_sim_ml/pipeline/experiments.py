@@ -821,6 +821,7 @@ def _material_set_model_config(
     condition_hidden = (8,) if config.architecture == "smoke" else (16, 16)
     condition_embedding_dim = 8 if config.architecture == "smoke" else 16
     baseline_head_hidden = (16,) if config.architecture == "smoke" else (256, 64)
+    baseline_dropout = 0.0
     if config.set_pretrained_regressor is not None:
         checkpoint = load_checkpoint(config.set_pretrained_regressor, map_location="cpu")
         pretrained = VideoRegressorConfig.from_dict(checkpoint["config"])
@@ -832,6 +833,7 @@ def _material_set_model_config(
         condition_hidden = pretrained.condition_hidden
         condition_embedding_dim = pretrained.condition_embedding_dim
         baseline_head_hidden = pretrained.head_hidden
+        baseline_dropout = pretrained.dropout
     smoke = config.architecture == "smoke"
     return (
         MaterialSetRegressorConfig(
@@ -841,6 +843,7 @@ def _material_set_model_config(
             condition_hidden=condition_hidden,
             condition_embedding_dim=condition_embedding_dim,
             baseline_head_hidden=baseline_head_hidden,
+            baseline_dropout=baseline_dropout,
             token_hidden=(32,) if smoke else (256,),
             token_dim=32 if smoke else 128,
             set_hidden=(32,) if smoke else (128,),
@@ -949,6 +952,8 @@ def run_material_set_experiment(
     )
     model = model_class(model_config)
     _initialize_set_model(model, pretrained_checkpoint)
+    if pretrained_checkpoint is not None and config.set_encoder_learning_rate_scale == 0.0:
+        model.freeze_pretrained_baseline()
     model = model.to(device)
     pretrained_parameters = (
         list(model.encoder.parameters())
@@ -962,6 +967,8 @@ def run_material_set_experiment(
     parameter_groups: Any
     if pretrained_checkpoint is None:
         parameter_groups = model.parameters()
+    elif config.set_encoder_learning_rate_scale == 0.0:
+        parameter_groups = new_parameters
     else:
         parameter_groups = [
             {

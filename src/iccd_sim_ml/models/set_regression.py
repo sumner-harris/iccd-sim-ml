@@ -33,6 +33,7 @@ class MaterialSetRegressorConfig:
     condition_hidden: tuple[int, ...] = (16, 16)
     condition_embedding_dim: int = 16
     baseline_head_hidden: tuple[int, ...] = (256, 64)
+    baseline_dropout: float = 0.0
     token_hidden: tuple[int, ...] = (256,)
     token_dim: int = 128
     set_hidden: tuple[int, ...] = (128,)
@@ -63,6 +64,8 @@ class MaterialSetRegressorConfig:
             raise ValueError("transformer_feedforward_dim must be positive")
         if not 0.0 <= self.dropout < 1.0:
             raise ValueError("dropout must be in [0, 1)")
+        if not 0.0 <= self.baseline_dropout < 1.0:
+            raise ValueError("baseline_dropout must be in [0, 1)")
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -81,6 +84,7 @@ class MaterialSetRegressorConfig:
             baseline_head_hidden=tuple(
                 value.get("baseline_head_hidden", defaults.baseline_head_hidden)
             ),
+            baseline_dropout=float(value.get("baseline_dropout", defaults.baseline_dropout)),
             token_hidden=tuple(value.get("token_hidden", defaults.token_hidden)),
             token_dim=int(value.get("token_dim", defaults.token_dim)),
             set_hidden=tuple(value.get("set_hidden", defaults.set_hidden)),
@@ -107,19 +111,20 @@ class MaterialSetRegressor(nn.Module):
         super().__init__()
         config = MaterialSetRegressorConfig() if config is None else config
         self.config = config
+        self._baseline_frozen = False
         self.encoder = VideoEncoder3D(config.encoder)
         self.condition_encoder = MLP(
             config.condition_dim,
             config.condition_embedding_dim,
             hidden_dims=config.condition_hidden,
-            dropout=config.dropout,
+            dropout=config.baseline_dropout,
         )
         experiment_embedding_dim = config.encoder.embedding_dim + config.condition_embedding_dim
         self.baseline_head = MLP(
             experiment_embedding_dim,
             config.num_targets,
             hidden_dims=config.baseline_head_hidden,
-            dropout=config.dropout,
+            dropout=config.baseline_dropout,
         )
         self.token_encoder = nn.Sequential(
             MLP(
@@ -182,6 +187,22 @@ class MaterialSetRegressor(nn.Module):
         )
         nn.init.zeros_(final_residual_layer.weight)
         nn.init.zeros_(final_residual_layer.bias)
+
+    def freeze_pretrained_baseline(self) -> None:
+        """Freeze and keep the transferred single-video regressor in eval mode."""
+
+        self._baseline_frozen = True
+        for module in (self.encoder, self.condition_encoder, self.baseline_head):
+            module.requires_grad_(False)
+            module.eval()
+
+    def train(self, mode: bool = True) -> MaterialSetRegressor:
+        super().train(mode)
+        if self._baseline_frozen:
+            self.encoder.eval()
+            self.condition_encoder.eval()
+            self.baseline_head.eval()
+        return self
 
     def _validate_inputs(
         self,
