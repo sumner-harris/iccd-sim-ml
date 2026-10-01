@@ -103,8 +103,14 @@ def test_set_regressors_are_permutation_invariant_and_trainable(
     permutation = torch.tensor([2, 0, 1])
 
     prediction = model(videos, conditions, mask)
+    set_prediction, individual_prediction, returned_mask = model.forward_with_individual(
+        videos, conditions, mask
+    )
     permuted = model(videos[:, permutation], conditions[:, permutation], mask[:, permutation])
     assert prediction.shape == (2, 7)
+    assert individual_prediction.shape == (2, 3, 7)
+    assert torch.equal(returned_mask, mask)
+    assert torch.allclose(set_prediction, prediction)
     assert torch.allclose(prediction, permuted, atol=1.0e-5, rtol=1.0e-5)
 
     model.train()

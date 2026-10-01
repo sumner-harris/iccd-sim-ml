@@ -127,6 +127,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Learning-rate multiplier for a pretrained video/condition encoder.",
     )
     parser.add_argument(
+        "--set-individual-loss-weight",
+        type=float,
+        default=0.2,
+        help="Weight for per-video regression supervision during joint set training.",
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -347,6 +353,7 @@ def main(argv: list[str] | None = None) -> int:
             else str(args.set_pretrained_regressor.expanduser().resolve())
         ),
         set_encoder_learning_rate_scale=args.set_encoder_learning_rate_scale,
+        set_individual_loss_weight=args.set_individual_loss_weight,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

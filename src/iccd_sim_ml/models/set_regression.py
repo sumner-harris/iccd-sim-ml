@@ -294,11 +294,22 @@ class MaterialSetRegressor(nn.Module):
         conditions: torch.Tensor,
         set_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        prediction, _, _ = self.forward_with_individual(videos, conditions, set_mask)
+        return prediction
+
+    def forward_with_individual(
+        self,
+        videos: torch.Tensor,
+        conditions: torch.Tensor,
+        set_mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return set prediction, per-experiment predictions, and valid mask."""
+
         tokens, baseline_predictions, mask = self.encode_experiments(videos, conditions, set_mask)
         weights = mask.unsqueeze(-1).to(baseline_predictions.dtype)
         baseline = (baseline_predictions * weights).sum(dim=1) / weights.sum(dim=1).clamp_min(1.0)
         residual = self.head(self.aggregate(tokens, mask))
-        return baseline + residual
+        return baseline + residual, baseline_predictions, mask
 
 
 class DeepSetRegressor(MaterialSetRegressor):

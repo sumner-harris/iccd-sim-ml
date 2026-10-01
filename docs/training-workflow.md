@@ -114,6 +114,13 @@ baseline, including its batch-normalization state, and train only the set
 residual. This is the recommended first experiment when the number of distinct
 training materials is small; nonzero fine-tuning is a later ablation.
 
+Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
+and set residual jointly from random initialization. The set objective is then
+augmented by per-video property supervision, controlled by
+`--set-individual-loss-weight` (default `0.2`). This preserves a useful
+single-video representation while the aggregate branch learns which
+condition-dependent evidence to combine across the set.
+
 For a production run, `--early-stopping-patience N` monitors validation loss,
 stops after `N` consecutive non-improving epochs, and restores the best model
 and optimizer state before final metrics and checkpoint output. This applies to

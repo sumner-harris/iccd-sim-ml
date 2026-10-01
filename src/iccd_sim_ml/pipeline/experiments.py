@@ -85,6 +85,7 @@ class TrainingRunConfig:
     set_validation_bags_per_material: int = 32
     set_pretrained_regressor: str | None = None
     set_encoder_learning_rate_scale: float = 0.1
+    set_individual_loss_weight: float = 0.2
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -111,6 +112,11 @@ class TrainingRunConfig:
             or self.set_encoder_learning_rate_scale < 0.0
         ):
             raise ValueError("set_encoder_learning_rate_scale must be finite and non-negative")
+        if (
+            not np.isfinite(self.set_individual_loss_weight)
+            or self.set_individual_loss_weight < 0.0
+        ):
+            raise ValueError("set_individual_loss_weight must be finite and non-negative")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -1000,6 +1006,8 @@ def run_material_set_experiment(
     history: dict[str, list[Any]] = {
         "epoch": [],
         "train_loss": [],
+        "train_set_loss": [],
+        "train_individual_loss": [],
         "validation_loss": [],
         "validation_set_r2_macro": [],
         "validation_material_ensemble_r2_macro": [],
@@ -1018,7 +1026,12 @@ def run_material_set_experiment(
         _synchronize(device)
         started = time.perf_counter()
         training = train_material_set_one_epoch(
-            model, train_loader, optimizer, device=device, criterion=criterion
+            model,
+            train_loader,
+            optimizer,
+            device=device,
+            criterion=criterion,
+            individual_loss_weight=config.set_individual_loss_weight,
         )
         _synchronize(device)
         trained = time.perf_counter()
@@ -1034,6 +1047,8 @@ def run_material_set_experiment(
         validated = time.perf_counter()
         history["epoch"].append(epoch + 1)
         history["train_loss"].append(training["loss"])
+        history["train_set_loss"].append(training["set_loss"])
+        history["train_individual_loss"].append(training["individual_loss"])
         history["validation_loss"].append(final_validation["loss"])
         history["validation_set_r2_macro"].append(final_validation["bag_metrics"]["r2_macro"])
         history["validation_material_ensemble_r2_macro"].append(
