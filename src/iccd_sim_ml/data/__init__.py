@@ -7,6 +7,7 @@ from .datasets import (
     save_precomputed_sample,
 )
 from .manifest import DatasetManifest, SampleRecord, as_manifest
+from .material_sets import MaterialSetDataset
 from .scalers import ArrayStandardizer, ScalerBundle, VideoStandardizer, fit_train_scalers
 from .splits import (
     SplitManifest,
@@ -20,6 +21,7 @@ __all__ = [
     "ArrayStandardizer",
     "DatasetManifest",
     "JointPrecomputedVideoDataset",
+    "MaterialSetDataset",
     "NPZKeys",
     "PrecomputedVideoDataset",
     "SampleRecord",

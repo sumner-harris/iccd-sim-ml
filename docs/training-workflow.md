@@ -22,6 +22,7 @@ fit_experiment_scalers ----------> scalers.json (training IDs only)
         +--> run_regression_experiment
         +--> run_classification_experiment
         +--> run_joint_cvae_experiment
+        +--> run_material_set_experiment (Deep Sets or Set Transformer)
                          |
                          v
                  reports + checkpoints
@@ -40,9 +41,11 @@ fit_experiment_scalers ----------> scalers.json (training IDs only)
 - `pipeline.experiments` assembles a model-specific run from those components.
 - `pipeline.reports` owns headless plots and JSON-safe metric output.
 
-The combined script can train `regression`, `classification`, `joint_cvae`, or
-`all`. The dedicated models do not pay the computational cost of the CVAE when
-generation is unnecessary.
+The combined script can also train `deep_set_regression` and
+`set_transformer_regression`. These models consume unordered sets of
+same-material simulations and predict one property vector per set. The
+dedicated models do not pay the computational cost of the CVAE when generation
+is unnecessary.
 
 ## Production manifest mode
 
@@ -65,8 +68,40 @@ python scripts/run_training_pipeline.py \
 ```
 
 Remove `--prepare-only` and select `--models regression`, `classification`,
-`joint_cvae`, or `all` to train. Use `--architecture standard` for production;
-the default `smoke` architecture exists only for fast integration tests.
+`joint_cvae`, or either set regressor to train. `all` retains the original
+three single-video/joint tasks; request the set regressors explicitly because
+they require at least `--set-size` simulations per element. Use
+`--architecture standard` for production; the default `smoke` architecture
+exists only for fast integration tests.
+
+For unseen-material property prediction, use the element-held-out split and a
+set regressor. This example initializes the shared 3D video and laser-condition
+encoders from a trained single-video regressor, then fine-tunes them at one
+tenth of the new set layers' learning rate:
+
+```bash
+python scripts/run_training_pipeline.py \
+  --manifest /mnt/shared_drive/plasma_sim_data_cache/manifest.json \
+  --output-dir /mnt/shared_drive/plasma_sim_training/material-set-seed42 \
+  --split-strategy element-held-out \
+  --split-file /mnt/shared_drive/plasma_sim_training/element-held-out-seed42/split.json \
+  --scalers-file /mnt/shared_drive/plasma_sim_training/element-held-out-seed42/scalers.json \
+  --models deep_set_regression set_transformer_regression \
+  --set-size 8 \
+  --set-train-bags-per-material 16 \
+  --set-validation-bags-per-material 32 \
+  --set-pretrained-regressor /path/to/regression/checkpoint.pt \
+  --set-encoder-learning-rate-scale 0.1 \
+  --architecture standard --batch-size 4 --epochs 100 \
+  --early-stopping-patience 25 --device cuda
+```
+
+Every set contains only one element, has no positional order, and samples
+without replacement. The primary validation metric is the macro R² over
+repeated independent K-video sets. A second `material_ensemble` metric averages
+those set predictions per held-out element; it is useful as a many-measurement
+upper bound but is not the primary K-video result. The test elements remain
+untouched until architecture selection is finished.
 
 For a production run, `--early-stopping-patience N` monitors validation loss,
 stops after `N` consecutive non-improving epochs, and restores the best model
@@ -161,6 +196,14 @@ output-dir/
     parity.png
     confusion_matrix.png
     generation_error_maps.png
+  deep_set_regression/
+    checkpoint.pt
+    metrics.json
+    learning_curves.png
+    set_parity.png
+    material_ensemble_parity.png
+  set_transformer_regression/
+    ...same artifact types...
 ```
 
 Metrics from a smoke run verify execution only. Use an untouched test split,

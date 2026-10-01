@@ -11,12 +11,16 @@ from importlib import import_module
 from typing import Any
 
 _EXPORTS = {
+    "DeepSetRegressor": (".set_regression", "DeepSetRegressor"),
     "JointConditionalVAE": (".joint_cvae", "JointConditionalVAE"),
     "JointCVAEConfig": (".joint_cvae", "JointCVAEConfig"),
     "JointCVAEOutput": (".joint_cvae", "JointCVAEOutput"),
     "MLP": (".blocks", "MLP"),
+    "MaterialSetRegressor": (".set_regression", "MaterialSetRegressor"),
+    "MaterialSetRegressorConfig": (".set_regression", "MaterialSetRegressorConfig"),
     "SpatialDownsample": (".blocks", "SpatialDownsample"),
     "SpatioTemporalBlock": (".blocks", "SpatioTemporalBlock"),
+    "SetTransformerRegressor": (".set_regression", "SetTransformerRegressor"),
     "VideoClassifier": (".video", "VideoClassifier"),
     "VideoClassifierConfig": (".video", "VideoClassifierConfig"),
     "VideoEncoder3D": (".video", "VideoEncoder3D"),

@@ -61,7 +61,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--models",
         nargs="+",
-        choices=("all", "regression", "classification", "joint_cvae"),
+        choices=(
+            "all",
+            "regression",
+            "classification",
+            "joint_cvae",
+            "deep_set_regression",
+            "set_transformer_regression",
+        ),
         default=("all",),
     )
     parser.add_argument("--frames", type=int)
@@ -99,6 +106,25 @@ def build_parser() -> argparse.ArgumentParser:
             "Classification-loss weight for joint cVAE training. Set to 0 for "
             "element-held-out regression/generation runs."
         ),
+    )
+    parser.add_argument(
+        "--set-size",
+        type=int,
+        default=8,
+        help="Number of same-material simulations in each Deep Set/Set Transformer input.",
+    )
+    parser.add_argument("--set-train-bags-per-material", type=int, default=16)
+    parser.add_argument("--set-validation-bags-per-material", type=int, default=32)
+    parser.add_argument(
+        "--set-pretrained-regressor",
+        type=Path,
+        help="Optional standalone-regressor checkpoint used to initialize video encoders.",
+    )
+    parser.add_argument(
+        "--set-encoder-learning-rate-scale",
+        type=float,
+        default=0.1,
+        help="Learning-rate multiplier for a pretrained video/condition encoder.",
     )
     parser.add_argument(
         "--split-strategy",
@@ -312,6 +338,15 @@ def main(argv: list[str] | None = None) -> int:
         early_stopping_patience=args.early_stopping_patience,
         early_stopping_min_delta=args.early_stopping_min_delta,
         joint_classification_weight=args.joint_classification_weight,
+        set_size=args.set_size,
+        set_train_bags_per_material=args.set_train_bags_per_material,
+        set_validation_bags_per_material=args.set_validation_bags_per_material,
+        set_pretrained_regressor=(
+            None
+            if args.set_pretrained_regressor is None
+            else str(args.set_pretrained_regressor.expanduser().resolve())
+        ),
+        set_encoder_learning_rate_scale=args.set_encoder_learning_rate_scale,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

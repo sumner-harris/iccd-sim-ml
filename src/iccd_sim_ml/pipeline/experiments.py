@@ -16,14 +16,18 @@ from torch.utils.data import DataLoader
 from iccd_sim_ml.data import (
     DatasetManifest,
     JointPrecomputedVideoDataset,
+    MaterialSetDataset,
     PrecomputedVideoDataset,
     ScalerBundle,
     SplitManifest,
     fit_train_scalers,
 )
 from iccd_sim_ml.models import (
+    DeepSetRegressor,
     JointConditionalVAE,
     JointCVAEConfig,
+    MaterialSetRegressorConfig,
+    SetTransformerRegressor,
     VideoClassifier,
     VideoClassifierConfig,
     VideoEncoderConfig,
@@ -32,11 +36,14 @@ from iccd_sim_ml.models import (
 )
 from iccd_sim_ml.training import (
     JointLossConfig,
+    collect_material_set_predictions,
     evaluate_epoch,
     evaluate_joint_epoch,
+    load_checkpoint,
     regression_metrics,
     save_checkpoint,
     train_joint_one_epoch,
+    train_material_set_one_epoch,
     train_one_epoch,
     video_generation_metrics,
 )
@@ -51,7 +58,13 @@ from .reports import (
     save_metrics_json,
 )
 
-ModelChoice = Literal["regression", "classification", "joint_cvae"]
+ModelChoice = Literal[
+    "regression",
+    "classification",
+    "joint_cvae",
+    "deep_set_regression",
+    "set_transformer_regression",
+]
 
 
 @dataclass(frozen=True)
@@ -67,6 +80,11 @@ class TrainingRunConfig:
     early_stopping_patience: int | None = None
     early_stopping_min_delta: float = 0.0
     joint_classification_weight: float = 1.0
+    set_size: int = 8
+    set_train_bags_per_material: int = 16
+    set_validation_bags_per_material: int = 32
+    set_pretrained_regressor: str | None = None
+    set_encoder_learning_rate_scale: float = 0.1
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -82,6 +100,17 @@ class TrainingRunConfig:
             or self.joint_classification_weight < 0.0
         ):
             raise ValueError("joint_classification_weight must be finite and non-negative")
+        if (
+            self.set_size < 1
+            or self.set_train_bags_per_material < 1
+            or self.set_validation_bags_per_material < 1
+        ):
+            raise ValueError("Set size and bag counts must be positive")
+        if (
+            not np.isfinite(self.set_encoder_learning_rate_scale)
+            or self.set_encoder_learning_rate_scale < 0.0
+        ):
+            raise ValueError("set_encoder_learning_rate_scale must be finite and non-negative")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -782,6 +811,274 @@ def run_joint_cvae_experiment(
     return summary
 
 
+def _material_set_model_config(
+    model_choice: ModelChoice,
+    config: TrainingRunConfig,
+) -> tuple[MaterialSetRegressorConfig, dict[str, Any] | None]:
+    aggregator = "deep_set" if model_choice == "deep_set_regression" else "set_transformer"
+    checkpoint: dict[str, Any] | None = None
+    encoder_config = _encoder(config)
+    condition_hidden = (8,) if config.architecture == "smoke" else (16, 16)
+    condition_embedding_dim = 8 if config.architecture == "smoke" else 16
+    if config.set_pretrained_regressor is not None:
+        checkpoint = load_checkpoint(config.set_pretrained_regressor, map_location="cpu")
+        pretrained = VideoRegressorConfig.from_dict(checkpoint["config"])
+        if pretrained.condition_dim != len(CONDITION_NAMES):
+            raise ValueError("Pretrained regressor condition width does not match this pipeline")
+        if pretrained.num_targets != len(TARGET_NAMES):
+            raise ValueError("Pretrained regressor target width does not match this pipeline")
+        encoder_config = pretrained.encoder
+        condition_hidden = pretrained.condition_hidden
+        condition_embedding_dim = pretrained.condition_embedding_dim
+    smoke = config.architecture == "smoke"
+    return (
+        MaterialSetRegressorConfig(
+            aggregator=aggregator,
+            encoder=encoder_config,
+            condition_dim=len(CONDITION_NAMES),
+            condition_hidden=condition_hidden,
+            condition_embedding_dim=condition_embedding_dim,
+            token_hidden=(32,) if smoke else (256,),
+            token_dim=32 if smoke else 128,
+            set_hidden=(32,) if smoke else (128,),
+            head_hidden=(32,) if smoke else (128, 64),
+            num_targets=len(TARGET_NAMES),
+            transformer_layers=1 if smoke else 2,
+            transformer_heads=4,
+            transformer_feedforward_dim=64 if smoke else 256,
+            dropout=0.0 if smoke else 0.1,
+        ),
+        checkpoint,
+    )
+
+
+def _initialize_set_encoder(
+    model: nn.Module,
+    checkpoint: dict[str, Any] | None,
+) -> None:
+    if checkpoint is None:
+        return
+    state = checkpoint["model_state"]
+    encoder_state = {
+        name.removeprefix("encoder."): value
+        for name, value in state.items()
+        if name.startswith("encoder.")
+    }
+    condition_state = {
+        name.removeprefix("condition_encoder."): value
+        for name, value in state.items()
+        if name.startswith("condition_encoder.")
+    }
+    if not encoder_state or not condition_state:
+        raise ValueError("Pretrained checkpoint lacks encoder or condition-encoder weights")
+    model.encoder.load_state_dict(encoder_state, strict=True)
+    model.condition_encoder.load_state_dict(condition_state, strict=True)
+
+
+def run_material_set_experiment(
+    model_choice: ModelChoice,
+    manifest: DatasetManifest,
+    split: SplitManifest,
+    scalers: ScalerBundle,
+    output_root: str | Path,
+    config: TrainingRunConfig,
+) -> dict[str, Any]:
+    """Train a material-property regressor on unordered same-element video sets."""
+
+    if model_choice not in {"deep_set_regression", "set_transformer_regression"}:
+        raise ValueError(f"Unsupported material-set model {model_choice!r}")
+    _seed(config)
+    device = _device(config)
+    output = _output_dir(output_root, model_choice)
+    train_data = MaterialSetDataset(
+        manifest,
+        sample_ids=split.train,
+        set_size=config.set_size,
+        sets_per_material=config.set_train_bags_per_material,
+        seed=config.seed,
+        scalers=scalers,
+    )
+    validation_data = MaterialSetDataset(
+        manifest,
+        sample_ids=split.validation,
+        set_size=config.set_size,
+        sets_per_material=config.set_validation_bags_per_material,
+        seed=config.seed + 1,
+        scalers=scalers,
+    )
+    train_loader = _loader(train_data, config, shuffle=True)
+    validation_loader = _loader(validation_data, config, shuffle=False)
+    model_config, pretrained_checkpoint = _material_set_model_config(model_choice, config)
+    model_class = (
+        DeepSetRegressor if model_choice == "deep_set_regression" else SetTransformerRegressor
+    )
+    model = model_class(model_config)
+    _initialize_set_encoder(model, pretrained_checkpoint)
+    model = model.to(device)
+    pretrained_parameters = list(model.encoder.parameters()) + list(
+        model.condition_encoder.parameters()
+    )
+    pretrained_ids = {id(parameter) for parameter in pretrained_parameters}
+    new_parameters = [
+        parameter for parameter in model.parameters() if id(parameter) not in pretrained_ids
+    ]
+    parameter_groups: Any
+    if pretrained_checkpoint is None:
+        parameter_groups = model.parameters()
+    else:
+        parameter_groups = [
+            {
+                "params": pretrained_parameters,
+                "lr": config.learning_rate * config.set_encoder_learning_rate_scale,
+            },
+            {"params": new_parameters, "lr": config.learning_rate},
+        ]
+    optimizer = torch.optim.AdamW(
+        parameter_groups,
+        lr=config.learning_rate,
+        weight_decay=config.weight_decay,
+    )
+    criterion = nn.SmoothL1Loss()
+    history: dict[str, list[Any]] = {
+        "epoch": [],
+        "train_loss": [],
+        "validation_loss": [],
+        "validation_set_r2_macro": [],
+        "validation_material_ensemble_r2_macro": [],
+        "train_seconds": [],
+        "validation_seconds": [],
+        "epoch_seconds": [],
+    }
+    best_validation_loss = float("inf")
+    best_epoch = 0
+    epochs_without_improvement = 0
+    best_model_state: dict[str, Any] | None = None
+    best_optimizer_state: dict[str, Any] | None = None
+    stopped_early = False
+    final_validation: dict[str, Any] = {}
+    for epoch in range(config.epochs):
+        _synchronize(device)
+        started = time.perf_counter()
+        training = train_material_set_one_epoch(
+            model, train_loader, optimizer, device=device, criterion=criterion
+        )
+        _synchronize(device)
+        trained = time.perf_counter()
+        final_validation = collect_material_set_predictions(
+            model,
+            validation_loader,
+            device=device,
+            target_scaler=scalers.targets,
+            target_names=TARGET_NAMES,
+            criterion=criterion,
+        )
+        _synchronize(device)
+        validated = time.perf_counter()
+        history["epoch"].append(epoch + 1)
+        history["train_loss"].append(training["loss"])
+        history["validation_loss"].append(final_validation["loss"])
+        history["validation_set_r2_macro"].append(final_validation["bag_metrics"]["r2_macro"])
+        history["validation_material_ensemble_r2_macro"].append(
+            final_validation["material_metrics"]["r2_macro"]
+        )
+        history["train_seconds"].append(trained - started)
+        history["validation_seconds"].append(validated - trained)
+        history["epoch_seconds"].append(validated - started)
+        print(
+            f"{model_choice} epoch {epoch + 1}/{config.epochs}: "
+            f"train_loss={training['loss']:.6g}, "
+            f"validation_loss={final_validation['loss']:.6g}, "
+            f"set_R2={final_validation['bag_metrics']['r2_macro']:.4f}, "
+            f"total={validated - started:.2f}s",
+            flush=True,
+        )
+        validation_loss = float(final_validation["loss"])
+        if validation_loss < best_validation_loss - config.early_stopping_min_delta:
+            best_validation_loss = validation_loss
+            best_epoch = epoch + 1
+            epochs_without_improvement = 0
+            best_model_state = copy.deepcopy(model.state_dict())
+            best_optimizer_state = copy.deepcopy(optimizer.state_dict())
+        else:
+            epochs_without_improvement += 1
+        if (
+            config.early_stopping_patience is not None
+            and epochs_without_improvement >= config.early_stopping_patience
+        ):
+            stopped_early = True
+            break
+    if best_model_state is not None and best_optimizer_state is not None:
+        model.load_state_dict(best_model_state)
+        optimizer.load_state_dict(best_optimizer_state)
+    final_validation = collect_material_set_predictions(
+        model,
+        validation_loader,
+        device=device,
+        target_scaler=scalers.targets,
+        target_names=TARGET_NAMES,
+        criterion=criterion,
+    )
+    plot_learning_curves(history, output / "learning_curves.png")
+    plot_regression_parity(
+        final_validation["bag_targets"],
+        final_validation["bag_predictions"],
+        TARGET_NAMES,
+        output / "set_parity.png",
+    )
+    plot_regression_parity(
+        final_validation["material_targets"],
+        final_validation["material_predictions"],
+        TARGET_NAMES,
+        output / "material_ensemble_parity.png",
+    )
+    parameter_count = sum(parameter.numel() for parameter in model.parameters())
+    summary = {
+        "model": type(model).__name__,
+        "device": str(device),
+        "parameter_count": parameter_count,
+        "run_config": asdict(config),
+        "model_config": model_config.to_dict(),
+        "history": history,
+        "primary_validation_metric": "validation_metrics.set.r2_macro",
+        "validation_metrics": {
+            "loss": final_validation["loss"],
+            "set": final_validation["bag_metrics"],
+            "material_ensemble": final_validation["material_metrics"],
+            "sets": final_validation["sets"],
+            "sets_per_element": final_validation["sets_per_element"],
+            "elements": final_validation["elements"],
+        },
+        "early_stopping": {
+            "enabled": config.early_stopping_patience is not None,
+            "patience": config.early_stopping_patience,
+            "epochs_completed": len(history["epoch"]),
+            "stopped_early": stopped_early,
+            "best_epoch": best_epoch,
+            "best_validation_loss": best_validation_loss,
+            "restored_best_weights": best_model_state is not None,
+        },
+        "pretrained_regressor": config.set_pretrained_regressor,
+        "train_materials": list(train_data.elements),
+        "validation_materials": list(validation_data.elements),
+    }
+    save_metrics_json(output / "metrics.json", summary)
+    save_checkpoint(
+        output / "checkpoint.pt",
+        model,
+        optimizer=optimizer,
+        epoch=best_epoch,
+        config=model_config,
+        scalers=scalers,
+        split=split,
+        metrics=summary,
+        extra={
+            "set_size": config.set_size,
+            "pretrained_regressor": config.set_pretrained_regressor,
+        },
+    )
+    return summary
+
+
 def run_experiment(
     model_choice: ModelChoice,
     manifest: DatasetManifest,
@@ -794,5 +1091,10 @@ def run_experiment(
         "regression": run_regression_experiment,
         "classification": run_classification_experiment,
         "joint_cvae": run_joint_cvae_experiment,
+        "deep_set_regression": run_material_set_experiment,
+        "set_transformer_regression": run_material_set_experiment,
     }
-    return runners[model_choice](manifest, split, scalers, output_root, config)
+    runner = runners[model_choice]
+    if model_choice in {"deep_set_regression", "set_transformer_regression"}:
+        return runner(model_choice, manifest, split, scalers, output_root, config)
+    return runner(manifest, split, scalers, output_root, config)

@@ -229,7 +229,8 @@ training, and plotting inline. In one invocation it:
 1. selects a deterministic element/simulation subset;
 2. validates existing NPZ cache fingerprints and builds only missing products;
 3. creates a leakage-safe within-element simulation split and train-only scalers;
-4. trains regression, classification, the joint CVAE, or any requested subset;
+4. trains regression, classification, the joint CVAE, Deep Sets, Set Transformer,
+   or any requested subset;
 5. saves checkpoints, metrics JSON, learning curves, regression parity plots,
    classification confusion matrices, and CVAE generation-error maps.
 
@@ -257,6 +258,15 @@ simulator and the per-element NIST reference catalog without changing the
 downstream experiment and report modules. See
 [`docs/training-workflow.md`](docs/training-workflow.md) for the module
 boundaries and artifact layout.
+
+For unknown-material regression, the same entry point supports
+`--models deep_set_regression` and `--models set_transformer_regression`.
+Each input is an unordered set of same-element videos plus the laser condition
+for every video. Use `--set-size 8` as the initial production baseline and,
+when available, initialize the shared 3D encoder with
+`--set-pretrained-regressor /path/to/regression/checkpoint.pt`. See the training
+workflow guide for the element-held-out command and interpretation of its two
+reported R² summaries.
 
 For a physical continuum-radiance cache, select the `continuum` backend. This
 strict example uses Cu, but `--elements` accepts any elements registered in

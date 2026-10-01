@@ -11,6 +11,10 @@ _LAZY_EXPORTS = {
     "JointLossConfig": (".joint", "JointLossConfig"),
     "checkpoint_metadata": (".checkpoints", "checkpoint_metadata"),
     "conditional_gaussian_kl": (".joint", "conditional_gaussian_kl"),
+    "collect_material_set_predictions": (
+        ".set_regression",
+        "collect_material_set_predictions",
+    ),
     "evaluate_epoch": (".engine", "evaluate_epoch"),
     "evaluate_joint_epoch": (".joint", "evaluate_joint_epoch"),
     "joint_cvae_loss": (".joint", "joint_cvae_loss"),
@@ -18,6 +22,10 @@ _LAZY_EXPORTS = {
     "save_checkpoint": (".checkpoints", "save_checkpoint"),
     "train_one_epoch": (".engine", "train_one_epoch"),
     "train_joint_one_epoch": (".joint", "train_joint_one_epoch"),
+    "train_material_set_one_epoch": (
+        ".set_regression",
+        "train_material_set_one_epoch",
+    ),
 }
 
 __all__ = [
@@ -25,6 +33,7 @@ __all__ = [
     "checkpoint_metadata",
     "classification_metrics",
     "conditional_gaussian_kl",
+    "collect_material_set_predictions",
     "evaluate_epoch",
     "evaluate_joint_epoch",
     "joint_cvae_loss",
@@ -33,6 +42,7 @@ __all__ = [
     "save_checkpoint",
     "train_one_epoch",
     "train_joint_one_epoch",
+    "train_material_set_one_epoch",
     "video_generation_metrics",
 ]
 
