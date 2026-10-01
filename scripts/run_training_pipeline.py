@@ -83,13 +83,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--early-stopping-patience",
         type=int,
-        help="Stop regression after this many epochs without validation-loss improvement.",
+        help="Stop training after this many epochs without validation-loss improvement.",
     )
     parser.add_argument(
         "--early-stopping-min-delta",
         type=float,
         default=0.0,
         help="Minimum absolute validation-loss reduction counted as improvement.",
+    )
+    parser.add_argument(
+        "--joint-classification-weight",
+        type=float,
+        default=1.0,
+        help=(
+            "Classification-loss weight for joint cVAE training. Set to 0 for "
+            "element-held-out regression/generation runs."
+        ),
     )
     parser.add_argument(
         "--split-strategy",
@@ -221,9 +230,7 @@ def main(argv: list[str] | None = None) -> int:
                 else args.radial_max_mm
             )
             axial_max_mm = (
-                base_imaging.axial_max_m * 1.0e3
-                if args.axial_max_mm is None
-                else args.axial_max_mm
+                base_imaging.axial_max_m * 1.0e3 if args.axial_max_mm is None else args.axial_max_mm
             )
             line_of_sight_points = (
                 base_imaging.line_of_sight_points
@@ -304,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         device=args.device,
         early_stopping_patience=args.early_stopping_patience,
         early_stopping_min_delta=args.early_stopping_min_delta,
+        joint_classification_weight=args.joint_classification_weight,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":
@@ -339,9 +347,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     scalers_state = "fitted"
     if scalers_path.is_file() and split_state == "loaded" and not args.refit_scalers:
-        scalers = ScalerBundle.from_dict(
-            json.loads(scalers_path.read_text(encoding="utf-8"))
-        )
+        scalers = ScalerBundle.from_dict(json.loads(scalers_path.read_text(encoding="utf-8")))
         if scalers.train_sample_ids != split.train:
             raise ValueError(
                 "Saved scalers were fit to different training IDs; use --refit-scalers "

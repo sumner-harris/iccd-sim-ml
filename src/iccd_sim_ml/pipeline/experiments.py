@@ -66,6 +66,7 @@ class TrainingRunConfig:
     device: str = "auto"
     early_stopping_patience: int | None = None
     early_stopping_min_delta: float = 0.0
+    joint_classification_weight: float = 1.0
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -76,6 +77,11 @@ class TrainingRunConfig:
             raise ValueError("early_stopping_patience must be positive when enabled")
         if self.early_stopping_min_delta < 0.0:
             raise ValueError("early_stopping_min_delta must be non-negative")
+        if (
+            not np.isfinite(self.joint_classification_weight)
+            or self.joint_classification_weight < 0.0
+        ):
+            raise ValueError("joint_classification_weight must be finite and non-negative")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -600,7 +606,10 @@ def run_joint_cvae_experiment(
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
-    loss_config = JointLossConfig(kl_weight=1.0e-3)
+    loss_config = JointLossConfig(
+        kl_weight=1.0e-3,
+        classification_weight=config.joint_classification_weight,
+    )
     tracked = ("loss", "reconstruction_loss", "regression_loss", "classification_loss", "kl_loss")
     history: dict[str, list[float]] = {"epoch": []}
     for phase in ("train", "validation"):
@@ -708,15 +717,17 @@ def run_joint_cvae_experiment(
         TARGET_NAMES,
         output / "parity.png",
     )
-    confusion = np.zeros((len(class_names), len(class_names)), dtype=np.int64)
-    predicted_classes = np.argmax(collected["logits"], axis=1)
-    np.add.at(confusion, (collected["classes"], predicted_classes), 1)
-    plot_confusion_matrix(confusion, class_names, output / "confusion_matrix.png")
-    plot_classification_report(
-        final_validation["classification_metrics"],
-        class_names,
-        output / "classification_report.png",
-    )
+    classification_enabled = loss_config.classification_weight > 0.0
+    if classification_enabled:
+        confusion = np.zeros((len(class_names), len(class_names)), dtype=np.int64)
+        predicted_classes = np.argmax(collected["logits"], axis=1)
+        np.add.at(confusion, (collected["classes"], predicted_classes), 1)
+        plot_confusion_matrix(confusion, class_names, output / "confusion_matrix.png")
+        plot_classification_report(
+            final_validation["classification_metrics"],
+            class_names,
+            output / "classification_report.png",
+        )
     generation_metrics_scaled = video_generation_metrics(
         collected["scaled_videos"], collected["scaled_generated"]
     )
@@ -726,8 +737,7 @@ def run_joint_cvae_experiment(
         "mae": float(np.mean(np.abs(physical_residual))),
         "rmse": float(np.sqrt(np.mean(physical_residual * physical_residual))),
         "relative_l1": float(
-            np.sum(np.abs(physical_residual))
-            / max(physical_truth_l1, np.finfo(np.float64).eps)
+            np.sum(np.abs(physical_residual)) / max(physical_truth_l1, np.finfo(np.float64).eps)
         ),
     }
     summary = {
@@ -735,6 +745,7 @@ def run_joint_cvae_experiment(
         "device": str(device),
         "run_config": asdict(config),
         "model_config": model_config.to_dict(),
+        "classification_enabled": classification_enabled,
         "class_names": class_names,
         "history": history,
         "early_stopping": {

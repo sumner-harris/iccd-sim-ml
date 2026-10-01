@@ -14,6 +14,7 @@ from iccd_sim_ml.pipeline.cache import (
     ensure_continuum_cache,
     ensure_proxy_cache,
 )
+from iccd_sim_ml.pipeline.experiments import TrainingRunConfig
 from iccd_sim_ml.pipeline.reports import (
     plot_classification_report,
     plot_confusion_matrix,
@@ -178,3 +179,9 @@ def test_report_plotters_write_expected_artifacts(tmp_path: Path) -> None:
             "errors.png",
         )
     )
+
+
+def test_joint_classification_weight_can_be_disabled() -> None:
+    assert TrainingRunConfig(joint_classification_weight=0.0).joint_classification_weight == 0.0
+    with pytest.raises(ValueError, match="joint_classification_weight"):
+        TrainingRunConfig(joint_classification_weight=-1.0)
