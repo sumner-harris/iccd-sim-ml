@@ -103,6 +103,13 @@ those set predictions per held-out element; it is useful as a many-measurement
 upper bound but is not the primary K-video result. The test elements remain
 untouched until architecture selection is finished.
 
+When initialized from a single-video checkpoint, both set models retain that
+regressor's complete prediction head. They average its K predictions and add a
+zero-initialized, permutation-invariant residual learned from the set. The
+epoch-zero validation result is therefore exactly the simple prediction-average
+baseline and is eligible for checkpoint restoration. Set training cannot erase
+that baseline merely because a newly initialized aggregation head overfits.
+
 For a production run, `--early-stopping-patience N` monitors validation loss,
 stops after `N` consecutive non-improving epochs, and restores the best model
 and optimizer state before final metrics and checkpoint output. This applies to

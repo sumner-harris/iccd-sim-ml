@@ -32,6 +32,7 @@ class MaterialSetRegressorConfig:
     condition_dim: int = 2
     condition_hidden: tuple[int, ...] = (16, 16)
     condition_embedding_dim: int = 16
+    baseline_head_hidden: tuple[int, ...] = (256, 64)
     token_hidden: tuple[int, ...] = (256,)
     token_dim: int = 128
     set_hidden: tuple[int, ...] = (128,)
@@ -44,6 +45,7 @@ class MaterialSetRegressorConfig:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "condition_hidden", tuple(self.condition_hidden))
+        object.__setattr__(self, "baseline_head_hidden", tuple(self.baseline_head_hidden))
         object.__setattr__(self, "token_hidden", tuple(self.token_hidden))
         object.__setattr__(self, "set_hidden", tuple(self.set_hidden))
         object.__setattr__(self, "head_hidden", tuple(self.head_hidden))
@@ -75,6 +77,9 @@ class MaterialSetRegressorConfig:
             condition_hidden=tuple(value.get("condition_hidden", defaults.condition_hidden)),
             condition_embedding_dim=int(
                 value.get("condition_embedding_dim", defaults.condition_embedding_dim)
+            ),
+            baseline_head_hidden=tuple(
+                value.get("baseline_head_hidden", defaults.baseline_head_hidden)
             ),
             token_hidden=tuple(value.get("token_hidden", defaults.token_hidden)),
             token_dim=int(value.get("token_dim", defaults.token_dim)),
@@ -109,9 +114,16 @@ class MaterialSetRegressor(nn.Module):
             hidden_dims=config.condition_hidden,
             dropout=config.dropout,
         )
+        experiment_embedding_dim = config.encoder.embedding_dim + config.condition_embedding_dim
+        self.baseline_head = MLP(
+            experiment_embedding_dim,
+            config.num_targets,
+            hidden_dims=config.baseline_head_hidden,
+            dropout=config.dropout,
+        )
         self.token_encoder = nn.Sequential(
             MLP(
-                config.encoder.embedding_dim + config.condition_embedding_dim,
+                experiment_embedding_dim,
                 config.token_dim,
                 hidden_dims=config.token_hidden,
                 dropout=config.dropout,
@@ -163,6 +175,13 @@ class MaterialSetRegressor(nn.Module):
             hidden_dims=config.head_hidden,
             dropout=config.dropout,
         )
+        final_residual_layer = next(
+            module
+            for module in reversed(tuple(self.head.modules()))
+            if isinstance(module, nn.Linear)
+        )
+        nn.init.zeros_(final_residual_layer.weight)
+        nn.init.zeros_(final_residual_layer.bias)
 
     def _validate_inputs(
         self,
@@ -196,8 +215,8 @@ class MaterialSetRegressor(nn.Module):
         videos: torch.Tensor,
         conditions: torch.Tensor,
         set_mask: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Return per-experiment tokens and a validated Boolean mask."""
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return tokens, baseline predictions, and a validated Boolean mask."""
 
         mask = self._validate_inputs(videos, conditions, set_mask)
         batch_size, set_size = videos.shape[:2]
@@ -207,11 +226,20 @@ class MaterialSetRegressor(nn.Module):
         valid_indices = flat_mask.nonzero(as_tuple=False).squeeze(1)
         video_embedding = self.encoder(flat_video.index_select(0, valid_indices))
         condition_embedding = self.condition_encoder(flat_conditions.index_select(0, valid_indices))
-        valid_tokens = self.token_encoder(torch.cat((video_embedding, condition_embedding), dim=1))
+        experiment_embedding = torch.cat((video_embedding, condition_embedding), dim=1)
+        valid_tokens = self.token_encoder(experiment_embedding)
+        valid_predictions = self.baseline_head(experiment_embedding)
         flat_tokens = valid_tokens.new_zeros(
             (batch_size * set_size, self.config.token_dim)
         ).index_copy(0, valid_indices, valid_tokens)
-        return flat_tokens.reshape(batch_size, set_size, -1), mask
+        flat_predictions = valid_predictions.new_zeros(
+            (batch_size * set_size, self.config.num_targets)
+        ).index_copy(0, valid_indices, valid_predictions)
+        return (
+            flat_tokens.reshape(batch_size, set_size, -1),
+            flat_predictions.reshape(batch_size, set_size, -1),
+            mask,
+        )
 
     def aggregate(self, tokens: torch.Tensor, set_mask: torch.Tensor) -> torch.Tensor:
         """Aggregate experiment tokens into one material embedding."""
@@ -245,8 +273,11 @@ class MaterialSetRegressor(nn.Module):
         conditions: torch.Tensor,
         set_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        tokens, mask = self.encode_experiments(videos, conditions, set_mask)
-        return self.head(self.aggregate(tokens, mask))
+        tokens, baseline_predictions, mask = self.encode_experiments(videos, conditions, set_mask)
+        weights = mask.unsqueeze(-1).to(baseline_predictions.dtype)
+        baseline = (baseline_predictions * weights).sum(dim=1) / weights.sum(dim=1).clamp_min(1.0)
+        residual = self.head(self.aggregate(tokens, mask))
+        return baseline + residual
 
 
 class DeepSetRegressor(MaterialSetRegressor):

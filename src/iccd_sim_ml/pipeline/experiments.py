@@ -820,6 +820,7 @@ def _material_set_model_config(
     encoder_config = _encoder(config)
     condition_hidden = (8,) if config.architecture == "smoke" else (16, 16)
     condition_embedding_dim = 8 if config.architecture == "smoke" else 16
+    baseline_head_hidden = (16,) if config.architecture == "smoke" else (256, 64)
     if config.set_pretrained_regressor is not None:
         checkpoint = load_checkpoint(config.set_pretrained_regressor, map_location="cpu")
         pretrained = VideoRegressorConfig.from_dict(checkpoint["config"])
@@ -830,6 +831,7 @@ def _material_set_model_config(
         encoder_config = pretrained.encoder
         condition_hidden = pretrained.condition_hidden
         condition_embedding_dim = pretrained.condition_embedding_dim
+        baseline_head_hidden = pretrained.head_hidden
     smoke = config.architecture == "smoke"
     return (
         MaterialSetRegressorConfig(
@@ -838,6 +840,7 @@ def _material_set_model_config(
             condition_dim=len(CONDITION_NAMES),
             condition_hidden=condition_hidden,
             condition_embedding_dim=condition_embedding_dim,
+            baseline_head_hidden=baseline_head_hidden,
             token_hidden=(32,) if smoke else (256,),
             token_dim=32 if smoke else 128,
             set_hidden=(32,) if smoke else (128,),
@@ -852,7 +855,43 @@ def _material_set_model_config(
     )
 
 
-def _initialize_set_encoder(
+def _load_mlp_linear_layers(
+    destination: nn.Module,
+    state: dict[str, Any],
+    prefix: str,
+) -> None:
+    weights = sorted(
+        (
+            (int(name.split(".")[2]), value)
+            for name, value in state.items()
+            if name.startswith(prefix) and name.endswith(".weight")
+        ),
+        key=lambda item: item[0],
+    )
+    biases = {
+        int(name.split(".")[2]): value
+        for name, value in state.items()
+        if name.startswith(prefix) and name.endswith(".bias")
+    }
+    destination_layers = [
+        module for module in destination.modules() if isinstance(module, nn.Linear)
+    ]
+    if not weights or len(destination_layers) != len(weights):
+        raise ValueError(f"Pretrained MLP {prefix!r} has an incompatible number of layers")
+    with torch.no_grad():
+        for destination_layer, (source_index, source_weight) in zip(
+            destination_layers, weights, strict=True
+        ):
+            source_bias = biases.get(source_index)
+            if source_bias is None:
+                raise ValueError(f"Pretrained MLP {prefix!r} is missing a layer bias")
+            if destination_layer.weight.shape != source_weight.shape:
+                raise ValueError(f"Pretrained MLP {prefix!r} has an incompatible weight shape")
+            destination_layer.weight.copy_(source_weight)
+            destination_layer.bias.copy_(source_bias)
+
+
+def _initialize_set_model(
     model: nn.Module,
     checkpoint: dict[str, Any] | None,
 ) -> None:
@@ -864,39 +903,11 @@ def _initialize_set_encoder(
         for name, value in state.items()
         if name.startswith("encoder.")
     }
-    condition_prefix = "condition_encoder.layers."
-    condition_weights = sorted(
-        (
-            (int(name.split(".")[2]), value)
-            for name, value in state.items()
-            if name.startswith(condition_prefix) and name.endswith(".weight")
-        ),
-        key=lambda item: item[0],
-    )
-    condition_biases = {
-        int(name.split(".")[2]): value
-        for name, value in state.items()
-        if name.startswith(condition_prefix) and name.endswith(".bias")
-    }
-    if not encoder_state or not condition_weights:
+    if not encoder_state:
         raise ValueError("Pretrained checkpoint lacks encoder or condition-encoder weights")
     model.encoder.load_state_dict(encoder_state, strict=True)
-    destination_layers = [
-        module for module in model.condition_encoder.modules() if isinstance(module, nn.Linear)
-    ]
-    if len(destination_layers) != len(condition_weights):
-        raise ValueError("Pretrained condition encoder has an incompatible number of layers")
-    with torch.no_grad():
-        for destination, (source_index, source_weight) in zip(
-            destination_layers, condition_weights, strict=True
-        ):
-            source_bias = condition_biases.get(source_index)
-            if source_bias is None:
-                raise ValueError("Pretrained condition encoder is missing a linear-layer bias")
-            if destination.weight.shape != source_weight.shape:
-                raise ValueError("Pretrained condition-encoder weight shape is incompatible")
-            destination.weight.copy_(source_weight)
-            destination.bias.copy_(source_bias)
+    _load_mlp_linear_layers(model.condition_encoder, state, "condition_encoder.layers.")
+    _load_mlp_linear_layers(model.baseline_head, state, "head.layers.")
 
 
 def run_material_set_experiment(
@@ -937,10 +948,12 @@ def run_material_set_experiment(
         DeepSetRegressor if model_choice == "deep_set_regression" else SetTransformerRegressor
     )
     model = model_class(model_config)
-    _initialize_set_encoder(model, pretrained_checkpoint)
+    _initialize_set_model(model, pretrained_checkpoint)
     model = model.to(device)
-    pretrained_parameters = list(model.encoder.parameters()) + list(
-        model.condition_encoder.parameters()
+    pretrained_parameters = (
+        list(model.encoder.parameters())
+        + list(model.condition_encoder.parameters())
+        + list(model.baseline_head.parameters())
     )
     pretrained_ids = {id(parameter) for parameter in pretrained_parameters}
     new_parameters = [
@@ -963,6 +976,20 @@ def run_material_set_experiment(
         weight_decay=config.weight_decay,
     )
     criterion = nn.SmoothL1Loss()
+    initial_validation = collect_material_set_predictions(
+        model,
+        validation_loader,
+        device=device,
+        target_scaler=scalers.targets,
+        target_names=TARGET_NAMES,
+        criterion=criterion,
+    )
+    print(
+        f"{model_choice} pretrained-mean baseline: "
+        f"validation_loss={initial_validation['loss']:.6g}, "
+        f"set_R2={initial_validation['bag_metrics']['r2_macro']:.4f}",
+        flush=True,
+    )
     history: dict[str, list[Any]] = {
         "epoch": [],
         "train_loss": [],
@@ -973,11 +1000,11 @@ def run_material_set_experiment(
         "validation_seconds": [],
         "epoch_seconds": [],
     }
-    best_validation_loss = float("inf")
+    best_validation_loss = float(initial_validation["loss"])
     best_epoch = 0
     epochs_without_improvement = 0
-    best_model_state: dict[str, Any] | None = None
-    best_optimizer_state: dict[str, Any] | None = None
+    best_model_state: dict[str, Any] | None = copy.deepcopy(model.state_dict())
+    best_optimizer_state: dict[str, Any] | None = copy.deepcopy(optimizer.state_dict())
     stopped_early = False
     final_validation: dict[str, Any] = {}
     for epoch in range(config.epochs):
@@ -1082,6 +1109,11 @@ def run_material_set_experiment(
             "restored_best_weights": best_model_state is not None,
         },
         "pretrained_regressor": config.set_pretrained_regressor,
+        "pretrained_mean_baseline": {
+            "loss": initial_validation["loss"],
+            "set": initial_validation["bag_metrics"],
+            "material_ensemble": initial_validation["material_metrics"],
+        },
         "train_materials": list(train_data.elements),
         "validation_materials": list(validation_data.elements),
     }

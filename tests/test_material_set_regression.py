@@ -18,6 +18,8 @@ from iccd_sim_ml.models import (  # noqa: E402
     MaterialSetRegressorConfig,
     SetTransformerRegressor,
     VideoEncoderConfig,
+    VideoRegressor,
+    VideoRegressorConfig,
 )
 
 
@@ -112,3 +114,51 @@ def test_set_regressors_are_permutation_invariant_and_trainable(
         parameter.grad is not None and torch.isfinite(parameter.grad).all()
         for parameter in model.parameters()
     )
+
+
+def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction() -> None:
+    encoder = VideoEncoderConfig(
+        input_channels=1,
+        stage_channels=(4,),
+        blocks_per_stage=1,
+        embedding_dim=8,
+    )
+    regressor = VideoRegressor(
+        VideoRegressorConfig(
+            encoder=encoder,
+            condition_hidden=(4,),
+            condition_embedding_dim=4,
+            head_hidden=(8,),
+            num_targets=7,
+            dropout=0.0,
+        )
+    )
+    set_model = DeepSetRegressor(
+        MaterialSetRegressorConfig(
+            aggregator="deep_set",
+            encoder=encoder,
+            condition_hidden=(4,),
+            condition_embedding_dim=4,
+            baseline_head_hidden=(8,),
+            token_hidden=(8,),
+            token_dim=8,
+            set_hidden=(8,),
+            head_hidden=(8,),
+            transformer_heads=2,
+            dropout=0.0,
+        )
+    )
+    set_model.encoder.load_state_dict(regressor.encoder.state_dict())
+    set_model.condition_encoder.load_state_dict(regressor.condition_encoder.state_dict())
+    set_model.baseline_head.load_state_dict(regressor.head.state_dict())
+    regressor.eval()
+    set_model.eval()
+    videos = torch.randn(2, 3, 1, 2, 8, 8)
+    conditions = torch.randn(2, 3, 2)
+
+    expected = (
+        regressor(videos.flatten(0, 1), conditions.flatten(0, 1)).reshape(2, 3, 7).mean(dim=1)
+    )
+    actual = set_model(videos, conditions)
+
+    assert torch.allclose(actual, expected, atol=1.0e-6, rtol=1.0e-6)
