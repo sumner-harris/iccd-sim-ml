@@ -79,6 +79,8 @@ def plot_regression_parity(
     predictions: np.ndarray,
     target_names: tuple[str, ...],
     path: str | Path,
+    *,
+    title: str = "Validation parity (physical units)",
 ) -> Path:
     """Create one physical-unit parity panel per regression property."""
 
@@ -127,7 +129,7 @@ def plot_regression_parity(
             ylim=(low - padding, high + padding),
         )
         axis.grid(alpha=0.2)
-    figure.suptitle("Validation parity (physical units)")
+    figure.suptitle(title)
     figure.savefig(destination, dpi=170)
     plt.close(figure)
     return destination
@@ -230,11 +232,7 @@ def plot_generation_error_maps(
         raise ValueError("max_samples must be positive")
     raw_truth = np.asarray(targets)
     raw_estimate = np.asarray(generated)
-    if (
-        raw_truth.shape != raw_estimate.shape
-        or raw_truth.ndim != 5
-        or raw_truth.shape[1] != 1
-    ):
+    if raw_truth.shape != raw_estimate.shape or raw_truth.ndim != 5 or raw_truth.shape[1] != 1:
         raise ValueError("Generation arrays must share shape (N,1,T,H,W)")
     if len(sample_names) != raw_truth.shape[0]:
         raise ValueError("sample_names does not match generation sample count")

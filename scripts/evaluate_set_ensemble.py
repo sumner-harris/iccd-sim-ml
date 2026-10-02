@@ -132,12 +132,14 @@ def main() -> None:
         ensemble["bag_predictions"],
         TARGET_NAMES,
         output / "set_parity.png",
+        title=f"{args.partition.title()} set parity (physical units)",
     )
     plot_regression_parity(
         ensemble["material_targets"],
         ensemble["material_predictions"],
         TARGET_NAMES,
         output / "material_ensemble_parity.png",
+        title=f"{args.partition.title()} material-ensemble parity (physical units)",
     )
     np.savez_compressed(
         output / "predictions.npz",
