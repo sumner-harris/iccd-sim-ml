@@ -89,6 +89,7 @@ class TrainingRunConfig:
     set_freeze_pretrained_batchnorm: bool = False
     set_pretrained_warmup_epochs: int = 0
     set_baseline_pooling: Literal["mean", "target_attention"] = "mean"
+    set_capacity: Literal["compact", "standard"] = "standard"
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -124,6 +125,8 @@ class TrainingRunConfig:
             raise ValueError("set_pretrained_warmup_epochs must be in [0, epochs)")
         if self.set_baseline_pooling not in {"mean", "target_attention"}:
             raise ValueError("set_baseline_pooling must be 'mean' or 'target_attention'")
+        if self.set_capacity not in {"compact", "standard"}:
+            raise ValueError("set_capacity must be 'compact' or 'standard'")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -848,6 +851,7 @@ def _material_set_model_config(
         baseline_head_hidden = pretrained.head_hidden
         baseline_dropout = pretrained.dropout
     smoke = config.architecture == "smoke"
+    compact = not smoke and config.set_capacity == "compact"
     return (
         MaterialSetRegressorConfig(
             aggregator=aggregator,
@@ -858,14 +862,14 @@ def _material_set_model_config(
             condition_embedding_dim=condition_embedding_dim,
             baseline_head_hidden=baseline_head_hidden,
             baseline_dropout=baseline_dropout,
-            token_hidden=(32,) if smoke else (256,),
-            token_dim=32 if smoke else 128,
-            set_hidden=(32,) if smoke else (128,),
-            head_hidden=(32,) if smoke else (128, 64),
+            token_hidden=(32,) if smoke else ((128,) if compact else (256,)),
+            token_dim=32 if smoke else (64 if compact else 128),
+            set_hidden=(32,) if smoke else ((64,) if compact else (128,)),
+            head_hidden=(32,) if smoke else ((64,) if compact else (128, 64)),
             num_targets=len(TARGET_NAMES),
-            transformer_layers=1 if smoke else 2,
+            transformer_layers=1 if smoke or compact else 2,
             transformer_heads=4,
-            transformer_feedforward_dim=64 if smoke else 256,
+            transformer_feedforward_dim=64 if smoke else (128 if compact else 256),
             dropout=0.0 if smoke else 0.1,
         ),
         checkpoint,

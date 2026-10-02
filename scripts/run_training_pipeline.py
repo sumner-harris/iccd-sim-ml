@@ -159,6 +159,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-capacity",
+        choices=("compact", "standard"),
+        default="standard",
+        help=(
+            "Capacity of the newly initialized material-set encoder and head. "
+            "Compact uses 64-dimensional tokens and one transformer layer."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -383,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
         set_freeze_pretrained_batchnorm=args.set_freeze_pretrained_batchnorm,
         set_pretrained_warmup_epochs=args.set_pretrained_warmup_epochs,
         set_baseline_pooling=args.set_baseline_pooling,
+        set_capacity=args.set_capacity,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

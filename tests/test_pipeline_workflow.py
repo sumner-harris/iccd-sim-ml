@@ -14,7 +14,7 @@ from iccd_sim_ml.pipeline.cache import (
     ensure_continuum_cache,
     ensure_proxy_cache,
 )
-from iccd_sim_ml.pipeline.experiments import TrainingRunConfig
+from iccd_sim_ml.pipeline.experiments import TrainingRunConfig, _material_set_model_config
 from iccd_sim_ml.pipeline.reports import (
     plot_classification_report,
     plot_confusion_matrix,
@@ -197,3 +197,22 @@ def test_set_baseline_pooling_is_validated() -> None:
     assert TrainingRunConfig(set_baseline_pooling="target_attention")
     with pytest.raises(ValueError, match="set_baseline_pooling"):
         TrainingRunConfig(set_baseline_pooling="unconstrained")
+
+
+def test_set_capacity_is_validated() -> None:
+    assert TrainingRunConfig(set_capacity="compact")
+    with pytest.raises(ValueError, match="set_capacity"):
+        TrainingRunConfig(set_capacity="oversized")
+
+
+def test_compact_set_capacity_reduces_transformer_dimensions() -> None:
+    config, checkpoint = _material_set_model_config(
+        "set_transformer_regression",
+        TrainingRunConfig(architecture="standard", set_capacity="compact"),
+    )
+    assert checkpoint is None
+    assert config.token_dim == 64
+    assert config.token_hidden == (128,)
+    assert config.transformer_layers == 1
+    assert config.transformer_feedforward_dim == 128
+    assert config.head_hidden == (64,)

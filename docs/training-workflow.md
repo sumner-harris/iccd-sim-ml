@@ -123,6 +123,11 @@ The optional `--set-baseline-pooling target_attention` replaces the fixed mean
 of K single-video predictions with per-property convex attention weights. Its
 weights are initialized uniformly, so epoch zero remains exactly the protected
 mean-regressor baseline.
+Use `--set-capacity compact` to reduce the newly initialized set branch to
+64-dimensional tokens, one transformer layer, and smaller feed-forward and
+prediction heads. The pretrained video encoder and single-video baseline are
+unchanged; this is a regularization option for datasets with few independent
+materials.
 
 Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
 and set residual jointly from random initialization. The set objective is then
