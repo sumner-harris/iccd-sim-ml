@@ -270,6 +270,9 @@ reported R² summaries. The pretrained prediction head is retained: its averaged
 prediction is the baseline and the set network learns a zero-initialized
 residual correction.
 
+The bounded, validation-only tuning protocol and trial ledger are documented in
+[`docs/set-optimization-campaign.md`](docs/set-optimization-campaign.md).
+
 For a physical continuum-radiance cache, select the `continuum` backend. This
 strict example uses Cu, but `--elements` accepts any elements registered in
 `data/reference/catalog.json`:
