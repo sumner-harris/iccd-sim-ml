@@ -75,3 +75,15 @@ set-level macro R2 0.74490 and material-ensemble R2 0.75025. Adding the weighted
 loss checkpoint reduces these values to 0.74420 and 0.74957, respectively, so
 that checkpoint is excluded. The small ensemble gain shows that the three
 models' errors are highly correlated.
+
+## Pre-registered final selection and test rule
+
+The three-seed unweighted ensemble is the default final model. A single Trial
+18--20 checkpoint will replace it only if its macro R2 on the unchanged
+validation bags exceeds the ensemble by more than 0.005. This margin is about
+three times the observed across-seed standard deviation and limits selection
+on noise after a 20-trial campaign. Validation bags use seed 43. After this
+choice is written to `selection.json`, the selected method is evaluated once
+on the locked test elements using pre-declared bag seed 44, K=32, and eight
+bags per material. No architecture, checkpoint, or ensemble membership may be
+changed in response to the test result.
