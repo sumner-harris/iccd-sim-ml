@@ -231,3 +231,12 @@ def test_set_bag_seed_is_independently_configurable() -> None:
     assert TrainingRunConfig(seed=43, set_bag_seed=42).set_bag_seed == 42
     with pytest.raises(ValueError, match="set_bag_seed"):
         TrainingRunConfig(set_bag_seed=-1)
+
+
+def test_set_training_bag_sampling_is_validated() -> None:
+    assert (
+        TrainingRunConfig(set_train_bag_sampling="condition_farthest").set_train_bag_sampling
+        == "condition_farthest"
+    )
+    with pytest.raises(ValueError, match="set_train_bag_sampling"):
+        TrainingRunConfig(set_train_bag_sampling="unsupported")  # type: ignore[arg-type]

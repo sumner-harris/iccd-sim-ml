@@ -94,6 +94,7 @@ class TrainingRunConfig:
     set_target_specific_pooling: bool = False
     set_target_loss_weights: tuple[float, ...] | None = None
     set_bag_seed: int | None = None
+    set_train_bag_sampling: Literal["random", "condition_farthest"] = "random"
 
     def __post_init__(self) -> None:
         if self.set_target_loss_weights is not None:
@@ -145,6 +146,8 @@ class TrainingRunConfig:
                 raise ValueError("set_target_loss_weights must be finite and positive")
         if self.set_bag_seed is not None and self.set_bag_seed < 0:
             raise ValueError("set_bag_seed must be non-negative when provided")
+        if self.set_train_bag_sampling not in {"random", "condition_farthest"}:
+            raise ValueError("set_train_bag_sampling must be 'random' or 'condition_farthest'")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -972,6 +975,7 @@ def run_material_set_experiment(
         set_size=config.set_size,
         sets_per_material=config.set_train_bags_per_material,
         seed=bag_seed,
+        sampling=config.set_train_bag_sampling,
         scalers=scalers,
     )
     validation_data = MaterialSetDataset(
@@ -1241,6 +1245,7 @@ def run_material_set_experiment(
         "pretrained_regressor": config.set_pretrained_regressor,
         "freeze_pretrained_batchnorm": config.set_freeze_pretrained_batchnorm,
         "pretrained_warmup_epochs": config.set_pretrained_warmup_epochs,
+        "train_bag_sampling": config.set_train_bag_sampling,
         "initial_validation": {
             "kind": initial_label,
             "loss": initial_validation["loss"],

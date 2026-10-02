@@ -195,6 +195,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-train-bag-sampling",
+        choices=("random", "condition_farthest"),
+        default="random",
+        help=(
+            "Training-bag selection strategy. condition_farthest builds space-filling "
+            "sets across standardized laser power and spot size; validation remains "
+            "fixed random bags for comparison."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -433,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
             None if args.set_target_loss_weights is None else tuple(args.set_target_loss_weights)
         ),
         set_bag_seed=args.set_bag_seed,
+        set_train_bag_sampling=args.set_train_bag_sampling,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

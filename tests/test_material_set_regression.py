@@ -97,6 +97,32 @@ def test_material_set_dataset_is_deterministic_and_never_mixes_elements(
     assert all(sample_id.startswith(item["element"]) for sample_id in item["sample_ids"])
 
 
+def test_condition_farthest_bags_span_laser_conditions(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    ids = tuple(record.sample_id for record in manifest.records)
+    dataset = MaterialSetDataset(
+        manifest,
+        sample_ids=ids,
+        set_size=3,
+        sets_per_material=2,
+        seed=11,
+        sampling="condition_farthest",
+    )
+
+    for _, records, _ in dataset.bags:
+        conditions = np.stack([dataset.conditions_by_id[record.sample_id] for record in records])
+        assert np.min(conditions[:, 0]) == 1.0
+        assert np.max(conditions[:, 0]) == 4.0
+
+    with pytest.raises(ValueError, match="sampling"):
+        MaterialSetDataset(
+            manifest,
+            sample_ids=ids,
+            set_size=3,
+            sampling="unsupported",  # type: ignore[arg-type]
+        )
+
+
 @pytest.mark.parametrize(
     ("aggregator", "model_class"),
     (("deep_set", DeepSetRegressor), ("set_transformer", SetTransformerRegressor)),

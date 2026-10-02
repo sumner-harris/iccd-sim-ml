@@ -6,7 +6,7 @@ import zlib
 from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -40,17 +40,21 @@ class MaterialSetDataset(TorchDataset):
         set_size: int = 8,
         sets_per_material: int = 16,
         seed: int = 42,
+        sampling: Literal["random", "condition_farthest"] = "random",
         scalers: ScalerBundle | None = None,
         keys: NPZKeys | None = None,
     ) -> None:
         _require_torch()
         if set_size < 1 or sets_per_material < 1:
             raise ValueError("set_size and sets_per_material must be positive")
+        if sampling not in {"random", "condition_farthest"}:
+            raise ValueError("sampling must be 'random' or 'condition_farthest'")
         self.manifest = as_manifest(manifest)
         self.scalers = scalers
         self.keys = NPZKeys() if keys is None else keys
         self.set_size = int(set_size)
         self.sets_per_material = int(sets_per_material)
+        self.sampling = sampling
         selected = self.manifest.select(tuple(sample_ids))
         grouped: dict[str, list[SampleRecord]] = defaultdict(list)
         for record in selected:
@@ -120,9 +124,39 @@ class MaterialSetDataset(TorchDataset):
                 rng = np.random.default_rng(
                     np.random.SeedSequence([int(seed), int(element_seed), bag_index])
                 )
-                selected = rng.choice(len(records), size=self.set_size, replace=False)
+                if self.sampling == "random":
+                    selected = rng.choice(len(records), size=self.set_size, replace=False)
+                else:
+                    selected = self._condition_farthest_indices(records, rng)
                 bag_records = tuple(records[int(index)] for index in selected)
                 yield element, bag_records, f"{element}-set-{bag_index:04d}"
+
+    def _condition_farthest_indices(
+        self, records: tuple[SampleRecord, ...], rng: np.random.Generator
+    ) -> np.ndarray:
+        """Select a space-filling subset over laser condition coordinates."""
+
+        values = np.stack([self.conditions_by_id[record.sample_id] for record in records]).astype(
+            np.float64
+        )
+        scale = np.std(values, axis=0)
+        normalized = (values - np.mean(values, axis=0)) / np.where(scale > 0.0, scale, 1.0)
+        radius = np.sum(normalized * normalized, axis=1)
+        outermost = np.flatnonzero(np.isclose(radius, np.max(radius), rtol=1.0e-12, atol=1.0e-15))
+        chosen = [int(rng.choice(outermost))]
+        minimum_distance = np.sum((normalized - normalized[chosen[0]]) ** 2, axis=1)
+        minimum_distance[chosen[0]] = -np.inf
+        while len(chosen) < self.set_size:
+            maximum = float(np.max(minimum_distance))
+            candidates = np.flatnonzero(
+                np.isclose(minimum_distance, maximum, rtol=1.0e-12, atol=1.0e-15)
+            )
+            next_index = int(rng.choice(candidates))
+            chosen.append(next_index)
+            distance = np.sum((normalized - normalized[next_index]) ** 2, axis=1)
+            minimum_distance = np.minimum(minimum_distance, distance)
+            minimum_distance[np.asarray(chosen)] = -np.inf
+        return np.asarray(chosen, dtype=np.int64)
 
     def __len__(self) -> int:
         return len(self.bags)
