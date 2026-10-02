@@ -42,7 +42,7 @@ available 26 training and 5 validation elements do not support it.
 | Trial | Status | Main change | Primary validation result | Decision |
 |---:|---|---|---|---|
 | 1 | stopped for futility after epoch 8 | Pretrained K=32 Deep Set; jointly fine-tune regressor at 0.1x; per-video loss weight 0.2 | protected epoch-zero R2 0.6507; trained epochs ranged from 0.0859 to -0.5867 | Training loss fell from 0.412 to 0.152 while every validation epoch was much worse than baseline; stopped to avoid seven additional non-improving epochs |
-| 2 | running | Trial 1 with base and pretrained learning rates reduced 10x | epoch-zero R2 0.6507 | Tests whether immediate degradation is an optimization-step-size problem |
-| 3 | planned | Trial 2 plus fixed pretrained BatchNorm running statistics | pending | Tests whether correlated same-material bags, rather than gradient step size alone, are overwriting mixed-material encoder statistics |
+| 2 | stopped for futility after epoch 1 | Trial 1 with base and pretrained learning rates reduced 10x | protected epoch-zero R2 0.6507; epoch 1 R2 0.0682 | Nearly identical collapse to Trial 1 despite 10x smaller optimizer steps; strongly implicates learning-rate-independent BatchNorm-statistics drift |
+| 3 | running | Trial 2 plus fixed pretrained BatchNorm running statistics | pending | Tests whether correlated same-material bags, rather than gradient step size alone, are overwriting mixed-material encoder statistics |
 | 4 | planned | Trial 3 with a five-epoch frozen-regressor set-head warmup before joint fine-tuning | pending | Prevents an untrained set residual and the mature video encoder from adapting simultaneously on the first batch |
 | 5 | candidate | Trial 4 with per-property convex attention over the K pretrained predictions | pending | Tests learned experiment reliability while preserving the exact mean baseline at initialization and constraining the combined prediction |
