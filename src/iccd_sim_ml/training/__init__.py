@@ -8,6 +8,10 @@ from typing import Any
 from .metrics import classification_metrics, regression_metrics, video_generation_metrics
 
 _LAZY_EXPORTS = {
+    "average_material_set_predictions": (
+        ".ensemble",
+        "average_material_set_predictions",
+    ),
     "JointLossConfig": (".joint", "JointLossConfig"),
     "TargetWeightedSmoothL1Loss": (
         ".set_regression",
@@ -35,6 +39,7 @@ _LAZY_EXPORTS = {
 __all__ = [
     "JointLossConfig",
     "TargetWeightedSmoothL1Loss",
+    "average_material_set_predictions",
     "checkpoint_metadata",
     "classification_metrics",
     "conditional_gaussian_kl",
