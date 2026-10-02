@@ -212,6 +212,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Persistent split manifest. Defaults to OUTPUT_DIR/split.json.",
     )
     parser.add_argument(
+        "--split-seed",
+        type=int,
+        help=(
+            "Seed used to create or validate split membership. Defaults to --seed; "
+            "set it explicitly when repeating model seeds on one saved split."
+        ),
+    )
+    parser.add_argument(
         "--scalers-file",
         type=Path,
         help="Saved train-only scaler bundle. Defaults to OUTPUT_DIR/scalers.json.",
@@ -445,7 +453,7 @@ def main(argv: list[str] | None = None) -> int:
         split_path,
         strategy=args.split_strategy,
         ratios=split_ratios,
-        seed=args.seed,
+        seed=args.seed if args.split_seed is None else args.split_seed,
         regenerate=args.regenerate_split,
     )
     print(

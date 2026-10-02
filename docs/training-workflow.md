@@ -139,6 +139,8 @@ validation loss so weighted trials remain directly comparable.
 For repeated-seed studies, set `--set-bag-seed` to a fixed value while varying
 `--seed`. This keeps train/validation bag membership identical and changes only
 model initialization, dropout, shuffling, and other training randomness.
+When loading a persistent split created with a different model seed, also pass
+its original value through `--split-seed` (for example, `--split-seed 42`).
 
 Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
 and set residual jointly from random initialization. The set objective is then
