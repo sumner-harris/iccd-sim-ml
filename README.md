@@ -270,8 +270,11 @@ workflow guide for the element-held-out command and interpretation of its two
 reported R² summaries. The pretrained prediction head is retained: its averaged
 prediction is the baseline and the set network learns a zero-initialized
 residual correction. Target-specific Set Transformer pooling is the current
-best validated architecture; `--set-train-bag-sampling condition_farthest` is
-an optional training-only condition-coverage experiment.
+best architecture on the five-element validation partition. It did **not**
+generalize to the six locked test elements (final macro R² -0.709), so it is a
+research baseline rather than a deployable unknown-material property model.
+Condition-farthest training-bag sampling was tested and underperformed random
+subset sampling.
 
 The bounded, validation-only tuning protocol and trial ledger are documented in
 [`docs/set-optimization-campaign.md`](docs/set-optimization-campaign.md).

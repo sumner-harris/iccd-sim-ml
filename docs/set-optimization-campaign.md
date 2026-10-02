@@ -33,8 +33,8 @@ available 26 training and 5 validation elements do not support it.
 | Approach | K | Validation macro R2 | Interpretation |
 |---|---:|---:|---|
 | Single-video regressor | 1 | about 0.478 | Existing held-out checkpoint |
-| Averaged pretrained predictions | 32 | 0.632 | Protected epoch-zero baseline |
-| Frozen pretrained branch plus Deep Set residual | 32 | best observed about 0.653 | Modest gain; run stopped before final report |
+| Averaged pretrained predictions | 32 | 0.6507 | Protected epoch-zero baseline |
+| Frozen pretrained branch plus Deep Set residual | 32 | 0.6558 | Small but stable improvement |
 | Joint Deep Set from random initialization | 32 | -0.300 restored | Severe element-level overfitting |
 
 ## Trial ledger
@@ -60,7 +60,7 @@ available 26 training and 5 validation elements do not support it.
 | 17 | stopped for futility after epoch 12 | Trial 13 with K increased from 32 to 64 | best observed R2 0.7397 at epoch 11, below every K=32 seed while taking about twice as long per epoch | Larger bags do not justify their compute cost for this architecture |
 | 18 | stopped for futility after epoch 25 | Trial 13 with a 12-epoch frozen warmup, then joint fine-tuning at an ultra-low 1e-8 pretrained learning rate, fixed pretrained BatchNorm statistics, and per-video auxiliary loss 0.2 | best and final R2 0.7089; post-unfreeze epochs took about 175 s versus 64 s frozen | Avoided collapse, but remained 0.033 below the replicated frozen result after 13 costly joint epochs; auxiliary individual loss changed only from about 0.2191 to 0.2169 |
 | 19 | stopped for futility after epoch 13 | Trial 13 with space-filling training bags selected by farthest-point sampling over laser power and spot size; validation bags unchanged | final R2 0.6728 versus Trial 13's 0.7410 near the same epoch | Space-filling bags removed useful random-subset diversity; training loss fell while validation improved far too slowly |
-| 20 | running | Target-specific K=32 model jointly fine-tuned from epoch 1 at a 1e-8 pretrained learning rate with fixed BatchNorm and no per-video auxiliary loss | protected baseline R2 0.6507; training started normally | Separates conservative encoder adaptation from the auxiliary objective and warmup used by Trial 18 |
+| 20 | stopped for futility after epoch 6 | Target-specific K=32 model jointly fine-tuned from epoch 1 at a 1e-8 pretrained learning rate with fixed BatchNorm and no per-video auxiliary loss | final R2 0.6583 versus Trial 13's 0.6978 at epoch 6; epochs cost about 174 s | Removing the auxiliary loss did not remove the joint-training slowdown; frozen features remain both faster and more accurate |
 
 ## Seed stability and checkpoint ensembling
 
@@ -87,3 +87,51 @@ choice is written to `selection.json`, the selected method is evaluated once
 on the locked test elements using pre-declared bag seed 44, K=32, and eight
 bags per material. No architecture, checkpoint, or ensemble membership may be
 changed in response to the test result.
+
+## Final selection
+
+The three-seed ensemble scored 0.74490 on the fixed validation bags. The best
+single member scored 0.74522, only 0.00032 higher and therefore far below the
+pre-registered 0.005 replacement margin. Trials 18--20 were all stopped below
+the reference configuration and were ineligible. The selected method is thus
+the physical-unit average of the Trial 13, 15, and 16 checkpoints.
+
+## Locked test result
+
+After selection was written to disk, the ensemble was evaluated once with
+K=32 and eight seed-44 bags for each of the six locked elements: As, Cu, Pr,
+Si, Te, and Zr. The bag-level macro R2 is **-0.70938** and the prediction-average
+per-material macro R2 is **-0.70504**. This is a genuine failure to generalize
+to the locked materials, not an R2 above 0.8.
+
+| Property | Test bag R2 | Test MAE |
+|---|---:|---:|
+| heat capacity | 0.5619 | 85.12 |
+| vaporization enthalpy | -0.2747 | 142,886.76 |
+| thermal conductivity | 0.2044 | 73.01 |
+| laser reflectivity | -0.8722 | 0.1699 |
+| mass density | -3.6664 | 3,449.73 |
+| boiling temperature | -0.1841 | 1,256.68 |
+| critical temperature | -0.7346 | 3,525.00 |
+
+Independent recomputation from `predictions.npz` reproduces every metric. The
+saved targets match the manifest's element-property rows; all arrays are finite
+and correctly aligned. Five of the six test materials lie within every
+training target range; only Cu thermal conductivity is outside it. The result
+therefore cannot be dismissed as a scaler error or simple target-range
+extrapolation.
+
+As a post-hoc diagnostic only, the protected mean of the pretrained K=32
+single-video predictions has test macro R2 -0.58084. The learned set residual
+improves heat capacity, vaporization enthalpy, conductivity, and boiling
+temperature, but worsens reflectivity, critical temperature, and especially
+density enough to reduce the macro score. A constant training-target-mean
+baseline scores -0.12451 on these six materials. Neither diagnostic was used
+for model selection, and no tuning was performed after the test was opened.
+
+The scientifically supported conclusion is that target-specific set pooling
+substantially improves the chosen five-element validation split, but the
+available 26 training materials are insufficient for robust unknown-element
+property prediction. A follow-up study should use nested repeated
+element-held-out evaluation and more independent materials; this locked test
+must not be reused as a tuning set.
