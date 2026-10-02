@@ -21,6 +21,9 @@ available 26 training and 5 validation elements do not support it.
   is used.
 - Record configuration, code commit, seed, best epoch, runtime, metrics, and
   failure diagnosis for every attempt.
+- Write `progress.json` after every epoch and atomically replace
+  `best_checkpoint.pt` after each validation improvement so interrupted trials
+  retain auditable state.
 - Prefer controlled changes motivated by the preceding result. Repeat
   promising configurations with additional seeds before interpreting small
   improvements.

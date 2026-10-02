@@ -1027,6 +1027,21 @@ def run_material_set_experiment(
     best_optimizer_state: dict[str, Any] | None = copy.deepcopy(optimizer.state_dict())
     stopped_early = False
     final_validation: dict[str, Any] = {}
+    save_checkpoint(
+        output / "best_checkpoint.pt",
+        model,
+        optimizer=optimizer,
+        epoch=0,
+        config=model_config,
+        scalers=scalers,
+        split=split,
+        metrics={
+            "status": "running",
+            "validation_loss": initial_validation["loss"],
+            "validation_set_metrics": initial_validation["bag_metrics"],
+        },
+        extra={"set_size": config.set_size, "initial_baseline": True},
+    )
     for epoch in range(config.epochs):
         _synchronize(device)
         started = time.perf_counter()
@@ -1077,8 +1092,38 @@ def run_material_set_experiment(
             epochs_without_improvement = 0
             best_model_state = copy.deepcopy(model.state_dict())
             best_optimizer_state = copy.deepcopy(optimizer.state_dict())
+            save_checkpoint(
+                output / "best_checkpoint.pt",
+                model,
+                optimizer=optimizer,
+                epoch=best_epoch,
+                config=model_config,
+                scalers=scalers,
+                split=split,
+                metrics={
+                    "status": "running",
+                    "validation_loss": validation_loss,
+                    "validation_set_metrics": final_validation["bag_metrics"],
+                },
+                extra={"set_size": config.set_size, "initial_baseline": False},
+            )
         else:
             epochs_without_improvement += 1
+        save_metrics_json(
+            output / "progress.json",
+            {
+                "status": "running",
+                "model": model_choice,
+                "epoch": epoch + 1,
+                "maximum_epochs": config.epochs,
+                "best_epoch": best_epoch,
+                "best_validation_loss": best_validation_loss,
+                "epochs_without_improvement": epochs_without_improvement,
+                "latest_validation_loss": validation_loss,
+                "latest_set_metrics": final_validation["bag_metrics"],
+                "history": history,
+            },
+        )
         if (
             config.early_stopping_patience is not None
             and epochs_without_improvement >= config.early_stopping_patience
@@ -1146,6 +1191,16 @@ def run_material_set_experiment(
         "validation_materials": list(validation_data.elements),
     }
     save_metrics_json(output / "metrics.json", summary)
+    save_metrics_json(
+        output / "progress.json",
+        {
+            "status": "complete",
+            "best_epoch": best_epoch,
+            "epochs_completed": len(history["epoch"]),
+            "stopped_early": stopped_early,
+            "validation_metrics": summary["validation_metrics"],
+        },
+    )
     save_checkpoint(
         output / "checkpoint.pt",
         model,
