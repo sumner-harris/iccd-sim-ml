@@ -38,5 +38,5 @@ available 26 training and 5 validation elements do not support it.
 
 | Trial | Status | Main change | Primary validation result | Decision |
 |---:|---|---|---|---|
-| 1 | queued | Pretrained K=32 Deep Set; jointly fine-tune regressor at 0.1x; per-video loss weight 0.2 | pending | pending |
-
+| 1 | running | Pretrained K=32 Deep Set; jointly fine-tune regressor at 0.1x; per-video loss weight 0.2 | epoch-zero R2 0.6507; epoch 1 R2 0.0859 | Continue to early stopping; protected baseline retained |
+| 2 | queued | Trial 1 with base and pretrained learning rates reduced 10x | pending | Tests whether immediate degradation is an optimization-step-size problem |
