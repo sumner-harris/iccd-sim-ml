@@ -90,6 +90,7 @@ class TrainingRunConfig:
     set_pretrained_warmup_epochs: int = 0
     set_baseline_pooling: Literal["mean", "target_attention"] = "mean"
     set_capacity: Literal["compact", "standard"] = "standard"
+    set_target_specific_pooling: bool = False
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -870,6 +871,7 @@ def _material_set_model_config(
             transformer_layers=1 if smoke or compact else 2,
             transformer_heads=4,
             transformer_feedforward_dim=64 if smoke else (128 if compact else 256),
+            target_specific_pooling=config.set_target_specific_pooling,
             dropout=0.0 if smoke else 0.1,
         ),
         checkpoint,

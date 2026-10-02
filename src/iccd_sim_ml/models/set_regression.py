@@ -44,6 +44,7 @@ class MaterialSetRegressorConfig:
     transformer_layers: int = 2
     transformer_heads: int = 4
     transformer_feedforward_dim: int = 256
+    target_specific_pooling: bool = False
     dropout: float = 0.1
 
     def __post_init__(self) -> None:
@@ -66,6 +67,8 @@ class MaterialSetRegressorConfig:
             raise ValueError("token_dim must be divisible by transformer_heads")
         if self.transformer_feedforward_dim <= 0:
             raise ValueError("transformer_feedforward_dim must be positive")
+        if self.target_specific_pooling and self.aggregator != "set_transformer":
+            raise ValueError("target_specific_pooling requires aggregator='set_transformer'")
         if not 0.0 <= self.dropout < 1.0:
             raise ValueError("dropout must be in [0, 1)")
         if not 0.0 <= self.baseline_dropout < 1.0:
@@ -99,6 +102,9 @@ class MaterialSetRegressorConfig:
             transformer_heads=int(value.get("transformer_heads", defaults.transformer_heads)),
             transformer_feedforward_dim=int(
                 value.get("transformer_feedforward_dim", defaults.transformer_feedforward_dim)
+            ),
+            target_specific_pooling=bool(
+                value.get("target_specific_pooling", defaults.target_specific_pooling)
             ),
             dropout=float(value.get("dropout", defaults.dropout)),
         )
@@ -182,14 +188,15 @@ class MaterialSetRegressor(nn.Module):
                 dropout=config.dropout,
                 batch_first=True,
             )
-            self.pooling_seed = nn.Parameter(torch.empty(1, 1, config.token_dim))
+            pooling_queries = config.num_targets if config.target_specific_pooling else 1
+            self.pooling_seed = nn.Parameter(torch.empty(1, pooling_queries, config.token_dim))
             nn.init.normal_(self.pooling_seed, mean=0.0, std=0.02)
             self.pooling_norm = nn.LayerNorm(config.token_dim)
             self.set_encoder = nn.Identity()
 
         self.head = MLP(
             config.token_dim,
-            config.num_targets,
+            1 if config.target_specific_pooling else config.num_targets,
             hidden_dims=config.head_hidden,
             dropout=config.dropout,
         )
@@ -337,7 +344,8 @@ class MaterialSetRegressor(nn.Module):
             key_padding_mask=padding_mask,
             need_weights=False,
         )
-        return self.pooling_norm(pooled[:, 0])
+        pooled = self.pooling_norm(pooled)
+        return pooled if self.config.target_specific_pooling else pooled[:, 0]
 
     def forward(
         self,
@@ -367,6 +375,8 @@ class MaterialSetRegressor(nn.Module):
             weights = weights / weights.sum(dim=1, keepdim=True).clamp_min(1.0)
         baseline = (baseline_predictions * weights).sum(dim=1)
         residual = self.head(self.aggregate(tokens, mask))
+        if self.config.target_specific_pooling:
+            residual = residual.squeeze(-1)
         return baseline + residual, baseline_predictions, mask
 
 

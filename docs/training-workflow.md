@@ -128,6 +128,10 @@ Use `--set-capacity compact` to reduce the newly initialized set branch to
 prediction heads. The pretrained video encoder and single-video baseline are
 unchanged; this is a regularization option for datasets with few independent
 materials.
+For Set Transformers, `--set-target-specific-pooling` uses one learned pooling
+query and residual head per physical property. This allows different targets
+to focus on different laser-condition experiments while retaining the exact
+mean-regressor prediction at initialization.
 
 Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
 and set residual jointly from random initialization. The set objective is then

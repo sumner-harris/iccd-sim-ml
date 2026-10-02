@@ -168,6 +168,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-target-specific-pooling",
+        action="store_true",
+        help=(
+            "Use one learned Set Transformer pooling query and scalar residual head "
+            "per regression target instead of one shared pooled material embedding."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -393,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
         set_pretrained_warmup_epochs=args.set_pretrained_warmup_epochs,
         set_baseline_pooling=args.set_baseline_pooling,
         set_capacity=args.set_capacity,
+        set_target_specific_pooling=args.set_target_specific_pooling,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":
