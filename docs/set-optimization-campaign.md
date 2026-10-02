@@ -57,4 +57,19 @@ available 26 training and 5 validation elements do not support it.
 | 14 | complete; early stopped at epoch 29 | Trial 13 with 2x training-loss weight on cp, kappa, density, and critical temperature | selected epoch 14: set R2 0.74175 and material ensemble R2 0.74718 | Only 0.00015 above Trial 13; improves weighted targets but trades away similar performance elsewhere |
 | 15 | complete; early stopped at epoch 28 | Repeat unweighted Trial 13 with model seed 43 and fixed bag seed 42 | selected epoch 13: set R2 0.7440 | Closely reproduces seed 42 and confirms the target-specific pooling gain is not a one-seed artifact |
 | 16 | complete; early stopped at epoch 28 | Repeat unweighted Trial 13 with model seed 44 and fixed bag seed 42 | selected epoch 13: set R2 0.7452 | Seeds 42--44 give mean 0.7436 with sample standard deviation 0.00185 on identical validation bags |
-| 17 | running | Trial 13 with K increased from 32 to 64 | pending | Tests whether property-specific queries can exploit a larger experiment set even though shared pooling could not |
+| 17 | stopped for futility after epoch 12 | Trial 13 with K increased from 32 to 64 | best observed R2 0.7397 at epoch 11, below every K=32 seed while taking about twice as long per epoch | Larger bags do not justify their compute cost for this architecture |
+| 18 | running | Trial 13 with a 12-epoch frozen warmup, then joint fine-tuning at an ultra-low 1e-8 pretrained learning rate, fixed pretrained BatchNorm statistics, and per-video auxiliary loss 0.2 | pending | Tests whether extremely conservative joint adaptation can improve on the stable frozen-regressor solution without destroying its transferable features |
+
+## Seed stability and checkpoint ensembling
+
+The target-specific K=32 Set Transformer was repeated with model seeds 42, 43,
+and 44 while holding the split and all bag memberships fixed. Its validation
+set-level macro R2 was 0.74160, 0.74404, and 0.74522 (mean 0.74362, sample
+standard deviation 0.00185). This is a stable architectural gain rather than a
+favorable single initialization.
+
+A physical-unit average of the three checkpoint predictions gives validation
+set-level macro R2 0.74490 and material-ensemble R2 0.75025. Adding the weighted
+loss checkpoint reduces these values to 0.74420 and 0.74957, respectively, so
+that checkpoint is excluded. The small ensemble gain shows that the three
+models' errors are highly correlated.
