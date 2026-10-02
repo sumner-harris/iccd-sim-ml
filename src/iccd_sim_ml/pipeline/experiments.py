@@ -1028,7 +1028,7 @@ def run_material_set_experiment(
     validation_criterion = nn.SmoothL1Loss()
     training_criterion: nn.Module = validation_criterion
     if config.set_target_loss_weights is not None:
-        training_criterion = TargetWeightedSmoothL1Loss(config.set_target_loss_weights)
+        training_criterion = TargetWeightedSmoothL1Loss(config.set_target_loss_weights).to(device)
     initial_validation = collect_material_set_predictions(
         model,
         validation_loader,

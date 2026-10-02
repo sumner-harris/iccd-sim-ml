@@ -313,3 +313,15 @@ def test_target_weighted_smooth_l1_normalizes_weights() -> None:
     assert torch.allclose(criterion(prediction, target), expected)
     with pytest.raises(ValueError, match="strictly positive"):
         TargetWeightedSmoothL1Loss((1.0, 0.0))
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
+def test_target_weighted_smooth_l1_moves_weights_to_cuda() -> None:
+    criterion = TargetWeightedSmoothL1Loss((2.0, 1.0)).to("cuda")
+    prediction = torch.tensor([[1.0, 2.0]], device="cuda")
+    target = torch.zeros_like(prediction)
+
+    loss = criterion(prediction, target)
+
+    assert loss.device.type == "cuda"
+    assert torch.isfinite(loss)
