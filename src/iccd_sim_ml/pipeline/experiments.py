@@ -88,6 +88,7 @@ class TrainingRunConfig:
     set_individual_loss_weight: float = 0.2
     set_freeze_pretrained_batchnorm: bool = False
     set_pretrained_warmup_epochs: int = 0
+    set_baseline_pooling: Literal["mean", "target_attention"] = "mean"
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -121,6 +122,8 @@ class TrainingRunConfig:
             raise ValueError("set_individual_loss_weight must be finite and non-negative")
         if not 0 <= self.set_pretrained_warmup_epochs < self.epochs:
             raise ValueError("set_pretrained_warmup_epochs must be in [0, epochs)")
+        if self.set_baseline_pooling not in {"mean", "target_attention"}:
+            raise ValueError("set_baseline_pooling must be 'mean' or 'target_attention'")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -848,6 +851,7 @@ def _material_set_model_config(
     return (
         MaterialSetRegressorConfig(
             aggregator=aggregator,
+            baseline_pooling=config.set_baseline_pooling,
             encoder=encoder_config,
             condition_dim=len(CONDITION_NAMES),
             condition_hidden=condition_hidden,

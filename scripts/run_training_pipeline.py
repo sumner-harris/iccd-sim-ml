@@ -150,6 +150,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-baseline-pooling",
+        choices=("mean", "target_attention"),
+        default="mean",
+        help=(
+            "Combine pretrained per-video predictions by a fixed mean or by learned, "
+            "per-property convex attention weights initialized to that mean."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -373,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
         set_individual_loss_weight=args.set_individual_loss_weight,
         set_freeze_pretrained_batchnorm=args.set_freeze_pretrained_batchnorm,
         set_pretrained_warmup_epochs=args.set_pretrained_warmup_epochs,
+        set_baseline_pooling=args.set_baseline_pooling,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

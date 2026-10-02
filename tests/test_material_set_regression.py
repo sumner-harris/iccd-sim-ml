@@ -69,6 +69,14 @@ def _config(aggregator: str) -> MaterialSetRegressorConfig:
     )
 
 
+def test_material_set_config_round_trip_preserves_attention_pooling() -> None:
+    config = MaterialSetRegressorConfig(
+        aggregator="deep_set",
+        baseline_pooling="target_attention",
+    )
+    assert MaterialSetRegressorConfig.from_dict(config.to_dict()) == config
+
+
 def test_material_set_dataset_is_deterministic_and_never_mixes_elements(
     tmp_path: Path,
 ) -> None:
@@ -122,7 +130,10 @@ def test_set_regressors_are_permutation_invariant_and_trainable(
     )
 
 
-def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction() -> None:
+@pytest.mark.parametrize("baseline_pooling", ("mean", "target_attention"))
+def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction(
+    baseline_pooling: str,
+) -> None:
     encoder = VideoEncoderConfig(
         input_channels=1,
         stage_channels=(4,),
@@ -142,6 +153,7 @@ def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction(
     set_model = DeepSetRegressor(
         MaterialSetRegressorConfig(
             aggregator="deep_set",
+            baseline_pooling=baseline_pooling,
             encoder=encoder,
             condition_hidden=(4,),
             condition_embedding_dim=4,
@@ -168,6 +180,12 @@ def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction(
     actual = set_model(videos, conditions)
 
     assert torch.allclose(actual, expected, atol=1.0e-6, rtol=1.0e-6)
+
+    if set_model.baseline_attention is not None:
+        set_model.train()
+        set_model(videos, conditions).square().mean().backward()
+        assert set_model.baseline_attention.weight.grad is not None
+        assert torch.isfinite(set_model.baseline_attention.weight.grad).all()
 
     set_model.freeze_pretrained_baseline()
     set_model.train()

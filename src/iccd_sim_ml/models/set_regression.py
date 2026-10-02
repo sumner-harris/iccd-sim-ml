@@ -21,6 +21,7 @@ from .blocks import MLP
 from .video import VideoEncoder3D, VideoEncoderConfig
 
 SetAggregator = Literal["deep_set", "set_transformer"]
+BaselinePooling = Literal["mean", "target_attention"]
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class MaterialSetRegressorConfig:
     """Configuration shared by Deep Sets and Set Transformer regressors."""
 
     aggregator: SetAggregator = "deep_set"
+    baseline_pooling: BaselinePooling = "mean"
     encoder: VideoEncoderConfig = field(default_factory=VideoEncoderConfig)
     condition_dim: int = 2
     condition_hidden: tuple[int, ...] = (16, 16)
@@ -52,6 +54,8 @@ class MaterialSetRegressorConfig:
         object.__setattr__(self, "head_hidden", tuple(self.head_hidden))
         if self.aggregator not in {"deep_set", "set_transformer"}:
             raise ValueError("aggregator must be 'deep_set' or 'set_transformer'")
+        if self.baseline_pooling not in {"mean", "target_attention"}:
+            raise ValueError("baseline_pooling must be 'mean' or 'target_attention'")
         if self.condition_dim <= 0 or self.condition_embedding_dim <= 0:
             raise ValueError("condition dimensions must be positive")
         if self.token_dim <= 0 or self.num_targets <= 0:
@@ -75,6 +79,7 @@ class MaterialSetRegressorConfig:
         defaults = cls()
         return cls(
             aggregator=str(value.get("aggregator", defaults.aggregator)),
+            baseline_pooling=str(value.get("baseline_pooling", defaults.baseline_pooling)),
             encoder=VideoEncoderConfig.from_dict(value.get("encoder", {})),
             condition_dim=int(value.get("condition_dim", defaults.condition_dim)),
             condition_hidden=tuple(value.get("condition_hidden", defaults.condition_hidden)),
@@ -127,6 +132,13 @@ class MaterialSetRegressor(nn.Module):
             hidden_dims=config.baseline_head_hidden,
             dropout=config.baseline_dropout,
         )
+        self.baseline_attention = (
+            nn.Linear(experiment_embedding_dim, config.num_targets, bias=False)
+            if config.baseline_pooling == "target_attention"
+            else None
+        )
+        if self.baseline_attention is not None:
+            nn.init.zeros_(self.baseline_attention.weight)
         self.token_encoder = nn.Sequential(
             MLP(
                 experiment_embedding_dim,
@@ -266,8 +278,8 @@ class MaterialSetRegressor(nn.Module):
         videos: torch.Tensor,
         conditions: torch.Tensor,
         set_mask: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return tokens, baseline predictions, and a validated Boolean mask."""
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return tokens, baseline predictions, attention logits, and mask."""
 
         mask = self._validate_inputs(videos, conditions, set_mask)
         batch_size, set_size = videos.shape[:2]
@@ -280,15 +292,24 @@ class MaterialSetRegressor(nn.Module):
         experiment_embedding = torch.cat((video_embedding, condition_embedding), dim=1)
         valid_tokens = self.token_encoder(experiment_embedding)
         valid_predictions = self.baseline_head(experiment_embedding)
+        valid_attention_logits = (
+            valid_predictions.new_zeros(valid_predictions.shape)
+            if self.baseline_attention is None
+            else self.baseline_attention(experiment_embedding)
+        )
         flat_tokens = valid_tokens.new_zeros(
             (batch_size * set_size, self.config.token_dim)
         ).index_copy(0, valid_indices, valid_tokens)
         flat_predictions = valid_predictions.new_zeros(
             (batch_size * set_size, self.config.num_targets)
         ).index_copy(0, valid_indices, valid_predictions)
+        flat_attention_logits = valid_attention_logits.new_zeros(
+            (batch_size * set_size, self.config.num_targets)
+        ).index_copy(0, valid_indices, valid_attention_logits)
         return (
             flat_tokens.reshape(batch_size, set_size, -1),
             flat_predictions.reshape(batch_size, set_size, -1),
+            flat_attention_logits.reshape(batch_size, set_size, -1),
             mask,
         )
 
@@ -335,9 +356,16 @@ class MaterialSetRegressor(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return set prediction, per-experiment predictions, and valid mask."""
 
-        tokens, baseline_predictions, mask = self.encode_experiments(videos, conditions, set_mask)
-        weights = mask.unsqueeze(-1).to(baseline_predictions.dtype)
-        baseline = (baseline_predictions * weights).sum(dim=1) / weights.sum(dim=1).clamp_min(1.0)
+        tokens, baseline_predictions, attention_logits, mask = self.encode_experiments(
+            videos, conditions, set_mask
+        )
+        if self.config.baseline_pooling == "target_attention":
+            attention_logits = attention_logits.masked_fill(~mask.unsqueeze(-1), -torch.inf)
+            weights = torch.softmax(attention_logits, dim=1)
+        else:
+            weights = mask.unsqueeze(-1).to(baseline_predictions.dtype)
+            weights = weights / weights.sum(dim=1, keepdim=True).clamp_min(1.0)
+        baseline = (baseline_predictions * weights).sum(dim=1)
         residual = self.head(self.aggregate(tokens, mask))
         return baseline + residual, baseline_predictions, mask
 

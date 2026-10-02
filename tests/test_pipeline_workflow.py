@@ -191,3 +191,9 @@ def test_set_pretrained_warmup_must_precede_final_epoch() -> None:
     assert TrainingRunConfig(epochs=3, set_pretrained_warmup_epochs=2)
     with pytest.raises(ValueError, match="set_pretrained_warmup_epochs"):
         TrainingRunConfig(epochs=3, set_pretrained_warmup_epochs=3)
+
+
+def test_set_baseline_pooling_is_validated() -> None:
+    assert TrainingRunConfig(set_baseline_pooling="target_attention")
+    with pytest.raises(ValueError, match="set_baseline_pooling"):
+        TrainingRunConfig(set_baseline_pooling="unconstrained")

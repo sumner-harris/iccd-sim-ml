@@ -114,6 +114,16 @@ baseline, including its batch-normalization state, and train only the set
 residual. This is the recommended first experiment when the number of distinct
 training materials is small; nonzero fine-tuning is a later ablation.
 
+For joint fine-tuning on same-material bags, use
+`--set-freeze-pretrained-batchnorm` so correlated K-video batches do not replace
+the mixed-material running statistics learned by the standalone regressor.
+`--set-pretrained-warmup-epochs N` first trains only the new set layers for N
+epochs and then unfreezes the pretrained weights at their scaled learning rate.
+The optional `--set-baseline-pooling target_attention` replaces the fixed mean
+of K single-video predictions with per-property convex attention weights. Its
+weights are initialized uniformly, so epoch zero remains exactly the protected
+mean-regressor baseline.
+
 Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
 and set residual jointly from random initialization. The set objective is then
 augmented by per-video property supervision, controlled by
