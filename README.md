@@ -262,13 +262,16 @@ boundaries and artifact layout.
 For unknown-material regression, the same entry point supports
 `--models deep_set_regression` and `--models set_transformer_regression`.
 Each input is an unordered set of same-element videos plus the laser condition
-for every video. Use `--set-size 8` as the initial production baseline and,
-when available, initialize the shared 3D encoder with
+for every video. Validation experiments currently support K=32 as the balanced
+production setting; K=64 doubled runtime without improving held-out-element
+accuracy. When available, initialize the shared 3D encoder with
 `--set-pretrained-regressor /path/to/regression/checkpoint.pt`. See the training
 workflow guide for the element-held-out command and interpretation of its two
 reported R² summaries. The pretrained prediction head is retained: its averaged
 prediction is the baseline and the set network learns a zero-initialized
-residual correction.
+residual correction. Target-specific Set Transformer pooling is the current
+best validated architecture; `--set-train-bag-sampling condition_farthest` is
+an optional training-only condition-coverage experiment.
 
 The bounded, validation-only tuning protocol and trial ledger are documented in
 [`docs/set-optimization-campaign.md`](docs/set-optimization-campaign.md).

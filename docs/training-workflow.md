@@ -139,6 +139,11 @@ validation loss so weighted trials remain directly comparable.
 For repeated-seed studies, set `--set-bag-seed` to a fixed value while varying
 `--seed`. This keeps train/validation bag membership identical and changes only
 model initialization, dropout, shuffling, and other training randomness.
+`--set-train-bag-sampling condition_farthest` selects a space-filling training
+subset across standardized laser power and spot size. It starts at an outer
+condition and repeatedly adds the experiment farthest from those already in
+the bag. Validation deliberately remains on the original fixed random bags,
+so this option changes training coverage without changing the evaluation set.
 When loading a persistent split created with a different model seed, also pass
 its original value through `--split-seed` (for example, `--split-seed 42`).
 
