@@ -9,6 +9,10 @@ from .metrics import classification_metrics, regression_metrics, video_generatio
 
 _LAZY_EXPORTS = {
     "JointLossConfig": (".joint", "JointLossConfig"),
+    "TargetWeightedSmoothL1Loss": (
+        ".set_regression",
+        "TargetWeightedSmoothL1Loss",
+    ),
     "checkpoint_metadata": (".checkpoints", "checkpoint_metadata"),
     "conditional_gaussian_kl": (".joint", "conditional_gaussian_kl"),
     "collect_material_set_predictions": (
@@ -30,6 +34,7 @@ _LAZY_EXPORTS = {
 
 __all__ = [
     "JointLossConfig",
+    "TargetWeightedSmoothL1Loss",
     "checkpoint_metadata",
     "classification_metrics",
     "conditional_gaussian_kl",

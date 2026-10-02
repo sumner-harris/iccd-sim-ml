@@ -36,6 +36,7 @@ from iccd_sim_ml.models import (
 )
 from iccd_sim_ml.training import (
     JointLossConfig,
+    TargetWeightedSmoothL1Loss,
     collect_material_set_predictions,
     evaluate_epoch,
     evaluate_joint_epoch,
@@ -91,8 +92,15 @@ class TrainingRunConfig:
     set_baseline_pooling: Literal["mean", "target_attention"] = "mean"
     set_capacity: Literal["compact", "standard"] = "standard"
     set_target_specific_pooling: bool = False
+    set_target_loss_weights: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
+        if self.set_target_loss_weights is not None:
+            object.__setattr__(
+                self,
+                "set_target_loss_weights",
+                tuple(float(value) for value in self.set_target_loss_weights),
+            )
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
             raise ValueError("epochs/batch_size must be positive and num_workers non-negative")
         if self.learning_rate <= 0.0 or self.weight_decay < 0.0:
@@ -128,6 +136,12 @@ class TrainingRunConfig:
             raise ValueError("set_baseline_pooling must be 'mean' or 'target_attention'")
         if self.set_capacity not in {"compact", "standard"}:
             raise ValueError("set_capacity must be 'compact' or 'standard'")
+        if self.set_target_loss_weights is not None:
+            weights = np.asarray(self.set_target_loss_weights, dtype=np.float64)
+            if weights.shape != (len(TARGET_NAMES),):
+                raise ValueError(f"set_target_loss_weights must contain {len(TARGET_NAMES)} values")
+            if not np.isfinite(weights).all() or np.any(weights <= 0.0):
+                raise ValueError("set_target_loss_weights must be finite and positive")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -1011,14 +1025,17 @@ def run_material_set_experiment(
         lr=config.learning_rate,
         weight_decay=config.weight_decay,
     )
-    criterion = nn.SmoothL1Loss()
+    validation_criterion = nn.SmoothL1Loss()
+    training_criterion: nn.Module = validation_criterion
+    if config.set_target_loss_weights is not None:
+        training_criterion = TargetWeightedSmoothL1Loss(config.set_target_loss_weights)
     initial_validation = collect_material_set_predictions(
         model,
         validation_loader,
         device=device,
         target_scaler=scalers.targets,
         target_names=TARGET_NAMES,
-        criterion=criterion,
+        criterion=validation_criterion,
     )
     initial_label = (
         "pretrained-mean baseline"
@@ -1083,7 +1100,7 @@ def run_material_set_experiment(
             train_loader,
             optimizer,
             device=device,
-            criterion=criterion,
+            criterion=training_criterion,
             individual_loss_weight=config.set_individual_loss_weight,
         )
         _synchronize(device)
@@ -1094,7 +1111,7 @@ def run_material_set_experiment(
             device=device,
             target_scaler=scalers.targets,
             target_names=TARGET_NAMES,
-            criterion=criterion,
+            criterion=validation_criterion,
         )
         _synchronize(device)
         validated = time.perf_counter()
@@ -1176,7 +1193,7 @@ def run_material_set_experiment(
         device=device,
         target_scaler=scalers.targets,
         target_names=TARGET_NAMES,
-        criterion=criterion,
+        criterion=validation_criterion,
     )
     plot_learning_curves(history, output / "learning_curves.png")
     plot_regression_parity(

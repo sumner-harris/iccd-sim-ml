@@ -176,6 +176,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-target-loss-weights",
+        nargs=7,
+        type=float,
+        metavar=("CP", "HVAP", "KAPPA", "REFLECT", "DENSITY", "TBOIL", "TCRIT"),
+        help=(
+            "Optional positive training-loss weights in target order: cp_metal, "
+            "h_vapor, kappa_metal, laser_reflectivity, mass_density_metal, "
+            "t_boil, tcrit. Validation selection remains unweighted."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -402,6 +413,9 @@ def main(argv: list[str] | None = None) -> int:
         set_baseline_pooling=args.set_baseline_pooling,
         set_capacity=args.set_capacity,
         set_target_specific_pooling=args.set_target_specific_pooling,
+        set_target_loss_weights=(
+            None if args.set_target_loss_weights is None else tuple(args.set_target_loss_weights)
+        ),
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

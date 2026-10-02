@@ -132,6 +132,10 @@ For Set Transformers, `--set-target-specific-pooling` uses one learned pooling
 query and residual head per physical property. This allows different targets
 to focus on different laser-condition experiments while retaining the exact
 mean-regressor prediction at initialization.
+`--set-target-loss-weights` accepts seven positive values in the documented
+property order and affects training only. Early stopping and checkpoint
+selection continue to use the original unweighted standardized Smooth-L1
+validation loss so weighted trials remain directly comparable.
 
 Omit `--set-pretrained-regressor` to train the 3D encoder, per-video regressor,
 and set residual jointly from random initialization. The set objective is then

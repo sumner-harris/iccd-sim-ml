@@ -23,6 +23,27 @@ from ..data.scalers import ArrayStandardizer
 from .metrics import regression_metrics
 
 
+class TargetWeightedSmoothL1Loss(nn.Module):
+    """Smooth-L1 loss with positive per-target weights normalized to mean one."""
+
+    def __init__(self, weights: Sequence[float]) -> None:
+        super().__init__()
+        tensor = torch.as_tensor(tuple(weights), dtype=torch.float32)
+        if tensor.ndim != 1 or tensor.numel() == 0:
+            raise ValueError("Target weights must be a non-empty one-dimensional sequence")
+        if not torch.isfinite(tensor).all() or not torch.all(tensor > 0):
+            raise ValueError("Target weights must be finite and strictly positive")
+        self.register_buffer("weights", tensor / tensor.mean())
+
+    def forward(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        if prediction.shape != target.shape:
+            raise ValueError("Prediction and target shapes must match")
+        if prediction.shape[-1] != self.weights.numel():
+            raise ValueError(f"Expected {self.weights.numel()} targets, got {prediction.shape[-1]}")
+        losses = nn.functional.smooth_l1_loss(prediction, target, reduction="none")
+        return (losses * self.weights).mean()
+
+
 def _move_batch(
     batch: Mapping[str, Any], device: torch.device | str
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:

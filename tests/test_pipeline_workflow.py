@@ -216,3 +216,12 @@ def test_compact_set_capacity_reduces_transformer_dimensions() -> None:
     assert config.transformer_layers == 1
     assert config.transformer_feedforward_dim == 128
     assert config.head_hidden == (64,)
+
+
+def test_set_target_loss_weights_are_validated() -> None:
+    weights = (2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0)
+    assert TrainingRunConfig(set_target_loss_weights=weights).set_target_loss_weights == weights
+    with pytest.raises(ValueError, match="must contain 7"):
+        TrainingRunConfig(set_target_loss_weights=(1.0, 2.0))
+    with pytest.raises(ValueError, match="finite and positive"):
+        TrainingRunConfig(set_target_loss_weights=(1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0))

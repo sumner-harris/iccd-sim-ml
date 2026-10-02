@@ -21,6 +21,7 @@ from iccd_sim_ml.models import (  # noqa: E402
     VideoRegressor,
     VideoRegressorConfig,
 )
+from iccd_sim_ml.training import TargetWeightedSmoothL1Loss  # noqa: E402
 
 
 def _manifest(tmp_path: Path) -> DatasetManifest:
@@ -300,3 +301,15 @@ def test_target_specific_transformer_pooling_preserves_mean_baseline() -> None:
 def test_target_specific_pooling_rejects_deep_sets() -> None:
     with pytest.raises(ValueError, match="requires aggregator"):
         MaterialSetRegressorConfig(aggregator="deep_set", target_specific_pooling=True)
+
+
+def test_target_weighted_smooth_l1_normalizes_weights() -> None:
+    criterion = TargetWeightedSmoothL1Loss((2.0, 1.0))
+    prediction = torch.tensor([[1.0, 2.0]])
+    target = torch.zeros_like(prediction)
+    elementwise = torch.nn.functional.smooth_l1_loss(prediction, target, reduction="none")
+    expected = (elementwise * torch.tensor((4.0 / 3.0, 2.0 / 3.0))).mean()
+
+    assert torch.allclose(criterion(prediction, target), expected)
+    with pytest.raises(ValueError, match="strictly positive"):
+        TargetWeightedSmoothL1Loss((1.0, 0.0))
