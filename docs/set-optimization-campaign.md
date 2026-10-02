@@ -60,6 +60,7 @@ available 26 training and 5 validation elements do not support it.
 | 17 | stopped for futility after epoch 12 | Trial 13 with K increased from 32 to 64 | best observed R2 0.7397 at epoch 11, below every K=32 seed while taking about twice as long per epoch | Larger bags do not justify their compute cost for this architecture |
 | 18 | running | Trial 13 with a 12-epoch frozen warmup, then joint fine-tuning at an ultra-low 1e-8 pretrained learning rate, fixed pretrained BatchNorm statistics, and per-video auxiliary loss 0.2 | epoch 18 R2 0.6921; improving without collapse, but post-unfreeze epochs take about 175 s versus 64 s frozen | Tests whether extremely conservative joint adaptation can eventually improve on the stable frozen-regressor solution without destroying its transferable features |
 | 19 | queued behind Trial 18 | Trial 13 with space-filling training bags selected by farthest-point sampling over laser power and spot size; validation bags unchanged | pending | Tests condition-domain coverage independently of model capacity and evaluation membership |
+| 20 | queued behind Trial 19 | Target-specific K=32 model jointly fine-tuned from epoch 1 at a 1e-8 pretrained learning rate with fixed BatchNorm and no per-video auxiliary loss | pending | Separates conservative encoder adaptation from the auxiliary objective and warmup used by Trial 18 |
 
 ## Seed stability and checkpoint ensembling
 
