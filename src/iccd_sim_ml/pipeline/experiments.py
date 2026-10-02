@@ -93,6 +93,7 @@ class TrainingRunConfig:
     set_capacity: Literal["compact", "standard"] = "standard"
     set_target_specific_pooling: bool = False
     set_target_loss_weights: tuple[float, ...] | None = None
+    set_bag_seed: int | None = None
 
     def __post_init__(self) -> None:
         if self.set_target_loss_weights is not None:
@@ -142,6 +143,8 @@ class TrainingRunConfig:
                 raise ValueError(f"set_target_loss_weights must contain {len(TARGET_NAMES)} values")
             if not np.isfinite(weights).all() or np.any(weights <= 0.0):
                 raise ValueError("set_target_loss_weights must be finite and positive")
+        if self.set_bag_seed is not None and self.set_bag_seed < 0:
+            raise ValueError("set_bag_seed must be non-negative when provided")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -962,12 +965,13 @@ def run_material_set_experiment(
     _seed(config)
     device = _device(config)
     output = _output_dir(output_root, model_choice)
+    bag_seed = config.seed if config.set_bag_seed is None else config.set_bag_seed
     train_data = MaterialSetDataset(
         manifest,
         sample_ids=split.train,
         set_size=config.set_size,
         sets_per_material=config.set_train_bags_per_material,
-        seed=config.seed,
+        seed=bag_seed,
         scalers=scalers,
     )
     validation_data = MaterialSetDataset(
@@ -975,7 +979,7 @@ def run_material_set_experiment(
         sample_ids=split.validation,
         set_size=config.set_size,
         sets_per_material=config.set_validation_bags_per_material,
-        seed=config.seed + 1,
+        seed=bag_seed + 1,
         scalers=scalers,
     )
     train_loader = _loader(train_data, config, shuffle=True)

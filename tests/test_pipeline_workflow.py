@@ -225,3 +225,9 @@ def test_set_target_loss_weights_are_validated() -> None:
         TrainingRunConfig(set_target_loss_weights=(1.0, 2.0))
     with pytest.raises(ValueError, match="finite and positive"):
         TrainingRunConfig(set_target_loss_weights=(1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0))
+
+
+def test_set_bag_seed_is_independently_configurable() -> None:
+    assert TrainingRunConfig(seed=43, set_bag_seed=42).set_bag_seed == 42
+    with pytest.raises(ValueError, match="set_bag_seed"):
+        TrainingRunConfig(set_bag_seed=-1)

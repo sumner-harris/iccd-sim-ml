@@ -187,6 +187,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-bag-seed",
+        type=int,
+        help=(
+            "Optional seed for material-set membership. Defaults to --seed; set it "
+            "explicitly to hold train/validation bags fixed across model-init seeds."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -416,6 +424,7 @@ def main(argv: list[str] | None = None) -> int:
         set_target_loss_weights=(
             None if args.set_target_loss_weights is None else tuple(args.set_target_loss_weights)
         ),
+        set_bag_seed=args.set_bag_seed,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":
