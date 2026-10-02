@@ -141,6 +141,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-pretrained-warmup-epochs",
+        type=int,
+        default=0,
+        help=(
+            "Train only the new set encoder/head for this many epochs before jointly "
+            "fine-tuning a supplied pretrained regressor."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -363,6 +372,7 @@ def main(argv: list[str] | None = None) -> int:
         set_encoder_learning_rate_scale=args.set_encoder_learning_rate_scale,
         set_individual_loss_weight=args.set_individual_loss_weight,
         set_freeze_pretrained_batchnorm=args.set_freeze_pretrained_batchnorm,
+        set_pretrained_warmup_epochs=args.set_pretrained_warmup_epochs,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

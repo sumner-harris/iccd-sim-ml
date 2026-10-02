@@ -185,3 +185,9 @@ def test_joint_classification_weight_can_be_disabled() -> None:
     assert TrainingRunConfig(joint_classification_weight=0.0).joint_classification_weight == 0.0
     with pytest.raises(ValueError, match="joint_classification_weight"):
         TrainingRunConfig(joint_classification_weight=-1.0)
+
+
+def test_set_pretrained_warmup_must_precede_final_epoch() -> None:
+    assert TrainingRunConfig(epochs=3, set_pretrained_warmup_epochs=2)
+    with pytest.raises(ValueError, match="set_pretrained_warmup_epochs"):
+        TrainingRunConfig(epochs=3, set_pretrained_warmup_epochs=3)

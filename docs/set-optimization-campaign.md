@@ -44,3 +44,4 @@ available 26 training and 5 validation elements do not support it.
 | 1 | running | Pretrained K=32 Deep Set; jointly fine-tune regressor at 0.1x; per-video loss weight 0.2 | epoch-zero R2 0.6507; epochs 1--2 R2 0.0859/0.0469 | Continue to early stopping; protected baseline retained |
 | 2 | queued | Trial 1 with base and pretrained learning rates reduced 10x | pending | Tests whether immediate degradation is an optimization-step-size problem |
 | 3 | planned | Trial 2 plus fixed pretrained BatchNorm running statistics | pending | Tests whether correlated same-material bags, rather than gradient step size alone, are overwriting mixed-material encoder statistics |
+| 4 | planned | Trial 3 with a five-epoch frozen-regressor set-head warmup before joint fine-tuning | pending | Prevents an untrained set residual and the mature video encoder from adapting simultaneously on the first batch |

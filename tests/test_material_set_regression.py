@@ -219,3 +219,24 @@ def test_frozen_pretrained_batchnorm_keeps_weight_gradients() -> None:
     assert all(not module.training for module in batchnorm_layers)
     assert model.encoder.training
     assert all(parameter.requires_grad for parameter in model.encoder.parameters())
+
+
+def test_pretrained_baseline_can_be_unfrozen_after_warmup() -> None:
+    model = DeepSetRegressor(_config("deep_set"))
+    model.freeze_pretrained_baseline()
+    model.train()
+    assert not model.encoder.training
+    assert not any(parameter.requires_grad for parameter in model.encoder.parameters())
+
+    model.unfreeze_pretrained_baseline(freeze_batchnorm_statistics=True)
+    model.train()
+
+    assert model.encoder.training
+    assert all(parameter.requires_grad for parameter in model.encoder.parameters())
+    batchnorm_layers = [
+        module
+        for module in model.encoder.modules()
+        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm)
+    ]
+    assert batchnorm_layers
+    assert all(not module.training for module in batchnorm_layers)

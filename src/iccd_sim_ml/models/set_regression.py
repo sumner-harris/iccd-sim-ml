@@ -212,6 +212,15 @@ class MaterialSetRegressor(nn.Module):
                 if isinstance(child, nn.modules.batchnorm._BatchNorm):
                     child.eval()
 
+    def unfreeze_pretrained_baseline(self, *, freeze_batchnorm_statistics: bool = False) -> None:
+        """Make transferred weights trainable after a set-head warmup stage."""
+
+        self._baseline_frozen = False
+        self._pretrained_batchnorm_frozen = bool(freeze_batchnorm_statistics)
+        for module in (self.encoder, self.condition_encoder, self.baseline_head):
+            module.requires_grad_(True)
+        self.train(self.training)
+
     def train(self, mode: bool = True) -> MaterialSetRegressor:
         super().train(mode)
         if self._baseline_frozen:

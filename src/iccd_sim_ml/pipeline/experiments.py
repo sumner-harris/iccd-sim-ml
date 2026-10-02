@@ -87,6 +87,7 @@ class TrainingRunConfig:
     set_encoder_learning_rate_scale: float = 0.1
     set_individual_loss_weight: float = 0.2
     set_freeze_pretrained_batchnorm: bool = False
+    set_pretrained_warmup_epochs: int = 0
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -118,6 +119,8 @@ class TrainingRunConfig:
             or self.set_individual_loss_weight < 0.0
         ):
             raise ValueError("set_individual_loss_weight must be finite and non-negative")
+        if not 0 <= self.set_pretrained_warmup_epochs < self.epochs:
+            raise ValueError("set_pretrained_warmup_epochs must be in [0, epochs)")
 
 
 def fit_experiment_scalers(manifest: DatasetManifest, split: SplitManifest) -> ScalerBundle:
@@ -959,7 +962,14 @@ def run_material_set_experiment(
     )
     model = model_class(model_config)
     _initialize_set_model(model, pretrained_checkpoint)
+    warmup_active = bool(
+        pretrained_checkpoint is not None
+        and config.set_encoder_learning_rate_scale > 0.0
+        and config.set_pretrained_warmup_epochs > 0
+    )
     if pretrained_checkpoint is not None and config.set_encoder_learning_rate_scale == 0.0:
+        model.freeze_pretrained_baseline()
+    elif warmup_active:
         model.freeze_pretrained_baseline()
     elif pretrained_checkpoint is not None and config.set_freeze_pretrained_batchnorm:
         model.freeze_pretrained_batchnorm_statistics()
@@ -1022,6 +1032,7 @@ def run_material_set_experiment(
         "train_seconds": [],
         "validation_seconds": [],
         "epoch_seconds": [],
+        "pretrained_trainable": [],
     }
     best_validation_loss = float(initial_validation["loss"])
     best_epoch = 0
@@ -1046,6 +1057,15 @@ def run_material_set_experiment(
         extra={"set_size": config.set_size, "initial_baseline": True},
     )
     for epoch in range(config.epochs):
+        if warmup_active and epoch == config.set_pretrained_warmup_epochs:
+            model.unfreeze_pretrained_baseline(
+                freeze_batchnorm_statistics=config.set_freeze_pretrained_batchnorm
+            )
+            print(
+                f"{model_choice} beginning joint fine-tuning after "
+                f"{config.set_pretrained_warmup_epochs} warmup epochs",
+                flush=True,
+            )
         _synchronize(device)
         started = time.perf_counter()
         training = train_material_set_one_epoch(
@@ -1080,6 +1100,10 @@ def run_material_set_experiment(
         history["train_seconds"].append(trained - started)
         history["validation_seconds"].append(validated - trained)
         history["epoch_seconds"].append(validated - started)
+        history["pretrained_trainable"].append(
+            pretrained_checkpoint is None
+            or any(parameter.requires_grad for parameter in pretrained_parameters)
+        )
         print(
             f"{model_choice} epoch {epoch + 1}/{config.epochs}: "
             f"train_loss={training['loss']:.6g}, "
@@ -1185,6 +1209,7 @@ def run_material_set_experiment(
         },
         "pretrained_regressor": config.set_pretrained_regressor,
         "freeze_pretrained_batchnorm": config.set_freeze_pretrained_batchnorm,
+        "pretrained_warmup_epochs": config.set_pretrained_warmup_epochs,
         "initial_validation": {
             "kind": initial_label,
             "loss": initial_validation["loss"],
