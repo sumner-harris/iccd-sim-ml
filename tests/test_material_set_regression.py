@@ -184,3 +184,38 @@ def test_zero_initialized_residual_exactly_reproduces_mean_regressor_prediction(
         )
         for parameter in module.parameters()
     )
+
+
+def test_frozen_pretrained_batchnorm_keeps_weight_gradients() -> None:
+    model = DeepSetRegressor(
+        MaterialSetRegressorConfig(
+            encoder=VideoEncoderConfig(
+                input_channels=1,
+                stage_channels=(2,),
+                blocks_per_stage=1,
+                embedding_dim=4,
+            ),
+            condition_hidden=(4,),
+            condition_embedding_dim=4,
+            baseline_head_hidden=(8,),
+            token_hidden=(8,),
+            token_dim=8,
+            set_hidden=(8,),
+            head_hidden=(8,),
+            transformer_heads=2,
+            dropout=0.0,
+        )
+    )
+
+    model.freeze_pretrained_batchnorm_statistics()
+    model.train()
+
+    batchnorm_layers = [
+        module
+        for module in model.encoder.modules()
+        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm)
+    ]
+    assert batchnorm_layers
+    assert all(not module.training for module in batchnorm_layers)
+    assert model.encoder.training
+    assert all(parameter.requires_grad for parameter in model.encoder.parameters())

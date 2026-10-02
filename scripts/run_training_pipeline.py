@@ -133,6 +133,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Weight for per-video regression supervision during joint set training.",
     )
     parser.add_argument(
+        "--set-freeze-pretrained-batchnorm",
+        action="store_true",
+        help=(
+            "Keep the pretrained regressor's BatchNorm running statistics fixed while "
+            "jointly fine-tuning its weights on correlated same-material sets."
+        ),
+    )
+    parser.add_argument(
         "--split-strategy",
         choices=("known-material", "legacy", "element-held-out"),
         default="known-material",
@@ -354,6 +362,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         set_encoder_learning_rate_scale=args.set_encoder_learning_rate_scale,
         set_individual_loss_weight=args.set_individual_loss_weight,
+        set_freeze_pretrained_batchnorm=args.set_freeze_pretrained_batchnorm,
     )
     if args.split_ratios is None:
         if args.split_strategy == "legacy":

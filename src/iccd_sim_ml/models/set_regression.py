@@ -112,6 +112,7 @@ class MaterialSetRegressor(nn.Module):
         config = MaterialSetRegressorConfig() if config is None else config
         self.config = config
         self._baseline_frozen = False
+        self._pretrained_batchnorm_frozen = False
         self.encoder = VideoEncoder3D(config.encoder)
         self.condition_encoder = MLP(
             config.condition_dim,
@@ -196,12 +197,32 @@ class MaterialSetRegressor(nn.Module):
             module.requires_grad_(False)
             module.eval()
 
+    def freeze_pretrained_batchnorm_statistics(self) -> None:
+        """Keep transferred BatchNorm statistics fixed while fine-tuning weights.
+
+        Set-training batches contain many experiments from one material, unlike
+        the mixed-material batches used to train the standalone regressor.  This
+        mode prevents those correlated bags from overwriting the pretrained
+        encoder's running mean and variance without disabling weight gradients.
+        """
+
+        self._pretrained_batchnorm_frozen = True
+        for module in (self.encoder, self.condition_encoder, self.baseline_head):
+            for child in module.modules():
+                if isinstance(child, nn.modules.batchnorm._BatchNorm):
+                    child.eval()
+
     def train(self, mode: bool = True) -> MaterialSetRegressor:
         super().train(mode)
         if self._baseline_frozen:
             self.encoder.eval()
             self.condition_encoder.eval()
             self.baseline_head.eval()
+        elif self._pretrained_batchnorm_frozen:
+            for module in (self.encoder, self.condition_encoder, self.baseline_head):
+                for child in module.modules():
+                    if isinstance(child, nn.modules.batchnorm._BatchNorm):
+                        child.eval()
         return self
 
     def _validate_inputs(

@@ -86,6 +86,7 @@ class TrainingRunConfig:
     set_pretrained_regressor: str | None = None
     set_encoder_learning_rate_scale: float = 0.1
     set_individual_loss_weight: float = 0.2
+    set_freeze_pretrained_batchnorm: bool = False
 
     def __post_init__(self) -> None:
         if self.epochs < 1 or self.batch_size < 1 or self.num_workers < 0:
@@ -960,6 +961,8 @@ def run_material_set_experiment(
     _initialize_set_model(model, pretrained_checkpoint)
     if pretrained_checkpoint is not None and config.set_encoder_learning_rate_scale == 0.0:
         model.freeze_pretrained_baseline()
+    elif pretrained_checkpoint is not None and config.set_freeze_pretrained_batchnorm:
+        model.freeze_pretrained_batchnorm_statistics()
     model = model.to(device)
     pretrained_parameters = (
         list(model.encoder.parameters())
@@ -1181,6 +1184,7 @@ def run_material_set_experiment(
             "restored_best_weights": best_model_state is not None,
         },
         "pretrained_regressor": config.set_pretrained_regressor,
+        "freeze_pretrained_batchnorm": config.set_freeze_pretrained_batchnorm,
         "initial_validation": {
             "kind": initial_label,
             "loss": initial_validation["loss"],
