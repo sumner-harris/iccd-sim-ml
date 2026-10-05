@@ -227,6 +227,15 @@ def test_set_target_loss_weights_are_validated() -> None:
         TrainingRunConfig(set_target_loss_weights=(1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0))
 
 
+def test_independent_set_encoders_require_target_specific_pooling() -> None:
+    assert TrainingRunConfig(
+        set_target_specific_pooling=True,
+        set_independent_target_encoders=True,
+    ).set_independent_target_encoders
+    with pytest.raises(ValueError, match="requires set_target_specific_pooling"):
+        TrainingRunConfig(set_independent_target_encoders=True)
+
+
 def test_set_bag_seed_is_independently_configurable() -> None:
     assert TrainingRunConfig(seed=43, set_bag_seed=42).set_bag_seed == 42
     with pytest.raises(ValueError, match="set_bag_seed"):

@@ -176,6 +176,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--set-independent-target-encoders",
+        action="store_true",
+        help=(
+            "Use one independent Set Transformer and residual head per material "
+            "property; requires --set-target-specific-pooling."
+        ),
+    )
+    parser.add_argument(
         "--set-target-loss-weights",
         nargs=7,
         type=float,
@@ -439,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
         set_baseline_pooling=args.set_baseline_pooling,
         set_capacity=args.set_capacity,
         set_target_specific_pooling=args.set_target_specific_pooling,
+        set_independent_target_encoders=args.set_independent_target_encoders,
         set_target_loss_weights=(
             None if args.set_target_loss_weights is None else tuple(args.set_target_loss_weights)
         ),

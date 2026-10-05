@@ -92,6 +92,7 @@ class TrainingRunConfig:
     set_baseline_pooling: Literal["mean", "target_attention"] = "mean"
     set_capacity: Literal["compact", "standard"] = "standard"
     set_target_specific_pooling: bool = False
+    set_independent_target_encoders: bool = False
     set_target_loss_weights: tuple[float, ...] | None = None
     set_bag_seed: int | None = None
     set_train_bag_sampling: Literal["random", "condition_farthest"] = "random"
@@ -138,6 +139,10 @@ class TrainingRunConfig:
             raise ValueError("set_baseline_pooling must be 'mean' or 'target_attention'")
         if self.set_capacity not in {"compact", "standard"}:
             raise ValueError("set_capacity must be 'compact' or 'standard'")
+        if self.set_independent_target_encoders and not self.set_target_specific_pooling:
+            raise ValueError(
+                "set_independent_target_encoders requires set_target_specific_pooling=True"
+            )
         if self.set_target_loss_weights is not None:
             weights = np.asarray(self.set_target_loss_weights, dtype=np.float64)
             if weights.shape != (len(TARGET_NAMES),):
@@ -892,6 +897,7 @@ def _material_set_model_config(
             transformer_heads=4,
             transformer_feedforward_dim=64 if smoke else (128 if compact else 256),
             target_specific_pooling=config.set_target_specific_pooling,
+            independent_target_encoders=config.set_independent_target_encoders,
             dropout=0.0 if smoke else 0.1,
         ),
         checkpoint,

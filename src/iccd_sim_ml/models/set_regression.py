@@ -45,6 +45,7 @@ class MaterialSetRegressorConfig:
     transformer_heads: int = 4
     transformer_feedforward_dim: int = 256
     target_specific_pooling: bool = False
+    independent_target_encoders: bool = False
     dropout: float = 0.1
 
     def __post_init__(self) -> None:
@@ -69,6 +70,8 @@ class MaterialSetRegressorConfig:
             raise ValueError("transformer_feedforward_dim must be positive")
         if self.target_specific_pooling and self.aggregator != "set_transformer":
             raise ValueError("target_specific_pooling requires aggregator='set_transformer'")
+        if self.independent_target_encoders and not self.target_specific_pooling:
+            raise ValueError("independent_target_encoders requires target_specific_pooling=True")
         if not 0.0 <= self.dropout < 1.0:
             raise ValueError("dropout must be in [0, 1)")
         if not 0.0 <= self.baseline_dropout < 1.0:
@@ -105,6 +108,9 @@ class MaterialSetRegressorConfig:
             ),
             target_specific_pooling=bool(
                 value.get("target_specific_pooling", defaults.target_specific_pooling)
+            ),
+            independent_target_encoders=bool(
+                value.get("independent_target_encoders", defaults.independent_target_encoders)
             ),
             dropout=float(value.get("dropout", defaults.dropout)),
         )
@@ -167,7 +173,7 @@ class MaterialSetRegressor(nn.Module):
                 hidden_dims=config.set_hidden,
                 dropout=config.dropout,
             )
-        else:
+        elif not config.independent_target_encoders:
             layer = nn.TransformerEncoderLayer(
                 d_model=config.token_dim,
                 nhead=config.transformer_heads,
@@ -193,20 +199,77 @@ class MaterialSetRegressor(nn.Module):
             nn.init.normal_(self.pooling_seed, mean=0.0, std=0.02)
             self.pooling_norm = nn.LayerNorm(config.token_dim)
             self.set_encoder = nn.Identity()
+            self.target_transformers: nn.ModuleList | None = None
+            self.target_pooling_attentions: nn.ModuleList | None = None
+            self.target_pooling_seeds: nn.ParameterList | None = None
+            self.target_pooling_norms: nn.ModuleList | None = None
+        else:
+            self.transformer = None
+            self.pooling_attention = None
+            self.pooling_seed = None
+            self.pooling_norm = None
+            self.set_encoder = nn.Identity()
+            self.target_transformers = nn.ModuleList()
+            self.target_pooling_attentions = nn.ModuleList()
+            self.target_pooling_seeds = nn.ParameterList()
+            self.target_pooling_norms = nn.ModuleList()
+            for _ in range(config.num_targets):
+                layer = nn.TransformerEncoderLayer(
+                    d_model=config.token_dim,
+                    nhead=config.transformer_heads,
+                    dim_feedforward=config.transformer_feedforward_dim,
+                    dropout=config.dropout,
+                    activation="gelu",
+                    batch_first=True,
+                    norm_first=True,
+                )
+                self.target_transformers.append(
+                    nn.TransformerEncoder(
+                        layer,
+                        num_layers=config.transformer_layers,
+                        enable_nested_tensor=False,
+                    )
+                )
+                self.target_pooling_attentions.append(
+                    nn.MultiheadAttention(
+                        config.token_dim,
+                        config.transformer_heads,
+                        dropout=config.dropout,
+                        batch_first=True,
+                    )
+                )
+                seed = nn.Parameter(torch.empty(1, 1, config.token_dim))
+                nn.init.normal_(seed, mean=0.0, std=0.02)
+                self.target_pooling_seeds.append(seed)
+                self.target_pooling_norms.append(nn.LayerNorm(config.token_dim))
 
-        self.head = MLP(
-            config.token_dim,
-            1 if config.target_specific_pooling else config.num_targets,
-            hidden_dims=config.head_hidden,
-            dropout=config.dropout,
-        )
-        final_residual_layer = next(
-            module
-            for module in reversed(tuple(self.head.modules()))
-            if isinstance(module, nn.Linear)
-        )
-        nn.init.zeros_(final_residual_layer.weight)
-        nn.init.zeros_(final_residual_layer.bias)
+        if config.independent_target_encoders:
+            self.head = nn.ModuleList(
+                MLP(
+                    config.token_dim,
+                    1,
+                    hidden_dims=config.head_hidden,
+                    dropout=config.dropout,
+                )
+                for _ in range(config.num_targets)
+            )
+            residual_heads = self.head
+        else:
+            self.head = MLP(
+                config.token_dim,
+                1 if config.target_specific_pooling else config.num_targets,
+                hidden_dims=config.head_hidden,
+                dropout=config.dropout,
+            )
+            residual_heads = (self.head,)
+        for residual_head in residual_heads:
+            final_residual_layer = next(
+                module
+                for module in reversed(tuple(residual_head.modules()))
+                if isinstance(module, nn.Linear)
+            )
+            nn.init.zeros_(final_residual_layer.weight)
+            nn.init.zeros_(final_residual_layer.bias)
 
     def freeze_pretrained_baseline(self) -> None:
         """Freeze and keep the transferred single-video regressor in eval mode."""
@@ -330,6 +393,32 @@ class MaterialSetRegressor(nn.Module):
             variance = ((tokens - mean.unsqueeze(1)).square() * weights).sum(dim=1) / count
             return self.set_encoder(torch.cat((mean, torch.sqrt(variance + 1.0e-6)), dim=1))
 
+        if self.config.independent_target_encoders:
+            assert self.target_transformers is not None
+            assert self.target_pooling_attentions is not None
+            assert self.target_pooling_seeds is not None
+            assert self.target_pooling_norms is not None
+            padding_mask = ~set_mask
+            pooled_targets = []
+            for transformer, attention, seed, norm in zip(
+                self.target_transformers,
+                self.target_pooling_attentions,
+                self.target_pooling_seeds,
+                self.target_pooling_norms,
+                strict=True,
+            ):
+                encoded = transformer(tokens, src_key_padding_mask=padding_mask)
+                query = seed.expand(tokens.shape[0], -1, -1)
+                pooled, _ = attention(
+                    query,
+                    encoded,
+                    encoded,
+                    key_padding_mask=padding_mask,
+                    need_weights=False,
+                )
+                pooled_targets.append(norm(pooled[:, 0]))
+            return torch.stack(pooled_targets, dim=1)
+
         assert self.transformer is not None
         assert self.pooling_attention is not None
         assert self.pooling_seed is not None
@@ -374,8 +463,16 @@ class MaterialSetRegressor(nn.Module):
             weights = mask.unsqueeze(-1).to(baseline_predictions.dtype)
             weights = weights / weights.sum(dim=1, keepdim=True).clamp_min(1.0)
         baseline = (baseline_predictions * weights).sum(dim=1)
-        residual = self.head(self.aggregate(tokens, mask))
-        if self.config.target_specific_pooling:
+        aggregate = self.aggregate(tokens, mask)
+        if self.config.independent_target_encoders:
+            assert isinstance(self.head, nn.ModuleList)
+            residual = torch.cat(
+                [head(aggregate[:, target_index]) for target_index, head in enumerate(self.head)],
+                dim=1,
+            )
+        else:
+            residual = self.head(aggregate)
+        if self.config.target_specific_pooling and not self.config.independent_target_encoders:
             residual = residual.squeeze(-1)
         return baseline + residual, baseline_predictions, mask
 

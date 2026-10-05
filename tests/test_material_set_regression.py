@@ -329,6 +329,58 @@ def test_target_specific_pooling_rejects_deep_sets() -> None:
         MaterialSetRegressorConfig(aggregator="deep_set", target_specific_pooling=True)
 
 
+def test_independent_target_transformers_preserve_baseline_and_permutation() -> None:
+    config = MaterialSetRegressorConfig(
+        aggregator="set_transformer",
+        target_specific_pooling=True,
+        independent_target_encoders=True,
+        encoder=VideoEncoderConfig(
+            input_channels=1,
+            stage_channels=(4,),
+            blocks_per_stage=1,
+            embedding_dim=8,
+        ),
+        condition_hidden=(4,),
+        condition_embedding_dim=4,
+        baseline_head_hidden=(8,),
+        token_hidden=(8,),
+        token_dim=8,
+        head_hidden=(8,),
+        transformer_layers=1,
+        transformer_heads=2,
+        transformer_feedforward_dim=16,
+        dropout=0.0,
+    )
+    model = SetTransformerRegressor(config).eval()
+    videos = torch.randn(2, 3, 1, 2, 8, 8)
+    conditions = torch.randn(2, 3, 2)
+    permutation = torch.tensor([2, 0, 1])
+
+    prediction, individual, _ = model.forward_with_individual(videos, conditions)
+    permuted = model(videos[:, permutation], conditions[:, permutation])
+
+    assert model.target_transformers is not None
+    assert model.target_pooling_seeds is not None
+    assert len(model.target_transformers) == config.num_targets
+    assert len(model.target_pooling_seeds) == config.num_targets
+    assert prediction.shape == (2, config.num_targets)
+    assert torch.allclose(prediction, individual.mean(dim=1), atol=1.0e-6, rtol=1.0e-6)
+    assert torch.allclose(prediction, permuted, atol=1.0e-5, rtol=1.0e-5)
+
+    model.train()
+    prediction = model(videos, conditions)
+    prediction.square().mean().backward()
+    first_gradient = next(model.target_transformers[0].parameters()).grad
+    last_gradient = next(model.target_transformers[-1].parameters()).grad
+    assert first_gradient is not None and torch.isfinite(first_gradient).all()
+    assert last_gradient is not None and torch.isfinite(last_gradient).all()
+
+
+def test_independent_target_encoders_require_target_specific_pooling() -> None:
+    with pytest.raises(ValueError, match="requires target_specific_pooling"):
+        MaterialSetRegressorConfig(aggregator="set_transformer", independent_target_encoders=True)
+
+
 def test_target_weighted_smooth_l1_normalizes_weights() -> None:
     criterion = TargetWeightedSmoothL1Loss((2.0, 1.0))
     prediction = torch.tensor([[1.0, 2.0]])
