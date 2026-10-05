@@ -135,3 +135,24 @@ available 26 training materials are insufficient for robust unknown-element
 property prediction. A follow-up study should use nested repeated
 element-held-out evaluation and more independent materials; this locked test
 must not be reused as a tuning set.
+
+## Post-campaign independent-property ablation
+
+After the locked-test analysis, a validation-only follow-up tested whether
+multi-property negative transfer explained the uneven target performance. The
+pretrained 3D video encoder and mean-regressor baseline remained shared and
+frozen, but each of the seven properties received an independent two-layer Set
+Transformer and residual head. All other Trial 13 settings were held fixed:
+the same 26 training and five validation elements, K=32 bags and memberships,
+seed 42, learning rate 1e-5, and unweighted standardized Smooth-L1 checkpoint
+selection. The six locked test elements were not evaluated.
+
+The independent model early-stopped after 30 epochs and restored epoch 15. It
+used 5,275,422 parameters and obtained validation set-level macro R2 0.67435
+and material-ensemble macro R2 0.68049. The shared target-query model used
+3,138,840 parameters and obtained 0.74160 and 0.74709, respectively. The
+independent model improved heat-capacity R2 from 0.60374 to 0.63917 but reduced
+R2 for the other six targets. Its training loss continued to fall while
+validation deteriorated after epoch 15. The result supports shared multi-task
+aggregation with property-specific queries and heads; seven full property
+aggregators have too much independent capacity for only 26 training materials.

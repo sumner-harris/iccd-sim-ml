@@ -132,6 +132,12 @@ For Set Transformers, `--set-target-specific-pooling` uses one learned pooling
 query and residual head per physical property. This allows different targets
 to focus on different laser-condition experiments while retaining the exact
 mean-regressor prediction at initialization.
+Adding `--set-independent-target-encoders` gives every property its own Set
+Transformer and residual head while retaining the shared pretrained 3D video
+encoder. It requires `--set-target-specific-pooling`. This is an ablation for
+negative transfer, not the recommended production default: on the established
+five-element validation split it overfit and reduced macro R2 from 0.7416 to
+0.6743 while increasing the parameter count from 3.14 M to 5.28 M.
 `--set-target-loss-weights` accepts seven positive values in the documented
 property order and affects training only. Early stopping and checkpoint
 selection continue to use the original unweighted standardized Smooth-L1
