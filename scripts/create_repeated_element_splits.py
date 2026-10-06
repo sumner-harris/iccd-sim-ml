@@ -87,9 +87,9 @@ def main(argv: list[str] | None = None) -> int:
             test=(),
             seed=args.seed + index - 1,
             ratios=(1.0 - args.validation_fraction, args.validation_fraction, 0.0),
-            group_fields=("element",),
+            group_fields=("element", "simulation_id"),
         )
-        validate_split(manifest, split, group_fields=("element",))
+        validate_split(manifest, split, group_fields=("element", "simulation_id"))
         destination = output_dir / f"split-{index:02d}.json"
         split.save(destination)
         validation_frequency.update(validation_elements)
