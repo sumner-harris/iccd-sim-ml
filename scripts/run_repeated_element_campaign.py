@@ -79,7 +79,9 @@ def main(argv: list[str] | None = None) -> int:
     output_dir = args.output_dir.expanduser().resolve()
     campaign = json.loads((splits_dir / "campaign.json").read_text(encoding="utf-8"))
     pipeline = Path(__file__).with_name("run_training_pipeline.py").resolve()
-    python = args.python.expanduser().resolve()
+    # Do not resolve this path: the remote uv environment intentionally exposes
+    # Python through a symlink, and resolving it would bypass the environment.
+    python = Path(os.path.abspath(args.python.expanduser()))
     status_path = output_dir / "campaign_status.json"
     status: dict[str, Any] = {
         "schema_version": 1,
