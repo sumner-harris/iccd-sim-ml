@@ -102,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         for row in campaign["splits"]:
             index = int(row["index"])
+            split_seed = int(row["seed"])
             run_dir = output_dir / f"split-{index:02d}"
             split_file = splits_dir / row["split_file"]
             scalers_file = run_dir / "scalers.json"
@@ -109,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
             set_metrics = run_dir / "set_transformer_regression" / "metrics.json"
             run_status: dict[str, Any] = {
                 "index": index,
+                "split_seed": split_seed,
                 "validation_elements": row["validation_elements"],
                 "split_file": str(split_file),
                 "regression_complete": regression_metrics.is_file(),
@@ -140,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
                 str(scalers_file),
                 "--seed",
                 str(args.model_seed),
+                "--split-seed",
+                str(split_seed),
                 "--architecture",
                 "standard",
                 "--device",
