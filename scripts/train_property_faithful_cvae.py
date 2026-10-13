@@ -60,6 +60,16 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--train-bags-per-material", type=int, default=8)
     parser.add_argument("--validation-bags-per-material", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument(
+        "--limit-materials",
+        type=int,
+        help="Smoke-test limit; use this many materials present in both train and validation.",
+    )
+    parser.add_argument(
+        "--limit-samples-per-material",
+        type=int,
+        help="Smoke-test limit applied independently to train and validation material samples.",
+    )
     parser.add_argument("--cycle-weight", type=float, default=0.25)
     parser.add_argument("--cycle-warmup-epochs", type=int, default=5)
     parser.add_argument("--perturbation-std", type=float, default=0.25)
@@ -87,6 +97,10 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("learning-rate must be positive and weight-decay non-negative")
     if not 0.0 < args.cycle_weight <= 1.0:
         raise ValueError("cycle-weight must be in (0,1]")
+    for name in ("limit_materials", "limit_samples_per_material"):
+        value = getattr(args, name)
+        if value is not None and value < 1:
+            raise ValueError(f"{name} must be positive when supplied")
 
 
 def _assert_checkpoint_compatibility(payloads: Mapping[str, dict[str, Any]]) -> None:
@@ -127,6 +141,45 @@ def _loader(dataset: Any, *, batch_size: int, workers: int, shuffle: bool) -> Da
         pin_memory=torch.cuda.is_available(),
         persistent_workers=workers > 0,
     )
+
+
+def _limited_ids(
+    manifest: DatasetManifest,
+    split: SplitManifest,
+    *,
+    material_limit: int | None,
+    samples_per_material: int | None,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Return deterministic train/validation subsets for real-data smoke tests."""
+
+    if material_limit is None and samples_per_material is None:
+        return split.train, split.validation
+    element_by_id = {record.sample_id: record.element for record in manifest.records}
+    train_elements = {element_by_id[sample_id] for sample_id in split.train}
+    validation_elements = {element_by_id[sample_id] for sample_id in split.validation}
+    elements = sorted(train_elements.intersection(validation_elements))
+    if material_limit is not None:
+        elements = elements[:material_limit]
+    selected = set(elements)
+
+    def choose(ids: tuple[str, ...]) -> tuple[str, ...]:
+        by_element = {element: [] for element in elements}
+        for sample_id in ids:
+            element = element_by_id[sample_id]
+            if element in selected:
+                by_element[element].append(sample_id)
+        result: list[str] = []
+        for element in elements:
+            values = sorted(by_element[element])
+            if samples_per_material is not None:
+                values = values[:samples_per_material]
+            result.extend(values)
+        return tuple(result)
+
+    train_ids, validation_ids = choose(split.train), choose(split.validation)
+    if not train_ids or not validation_ids:
+        raise ValueError("Smoke-test limits produced an empty train or validation subset")
+    return train_ids, validation_ids
 
 
 def _base_losses(
@@ -456,9 +509,15 @@ def main() -> None:
     with np.load(first_path, allow_pickle=False) as product:
         video_shape = (1, *tuple(int(value) for value in product["video"].shape))
         expected_times = np.asarray(product["times_s"], dtype=np.float64)
+    train_ids, validation_ids = _limited_ids(
+        manifest,
+        split,
+        material_limit=args.limit_materials,
+        samples_per_material=args.limit_samples_per_material,
+    )
     single_train = JointPrecomputedVideoDataset(
         manifest,
-        sample_ids=split.train,
+        sample_ids=train_ids,
         scalers=scalers,
         class_to_index=class_to_index,
         expected_video_shape=video_shape,
@@ -466,7 +525,7 @@ def main() -> None:
     )
     single_validation = JointPrecomputedVideoDataset(
         manifest,
-        sample_ids=split.validation,
+        sample_ids=validation_ids,
         scalers=scalers,
         class_to_index=class_to_index,
         expected_video_shape=video_shape,
@@ -504,7 +563,7 @@ def main() -> None:
 
     set_train = MaterialSetDataset(
         manifest,
-        sample_ids=split.train,
+        sample_ids=train_ids,
         set_size=args.set_size,
         sets_per_material=args.train_bags_per_material,
         seed=args.seed,
@@ -513,7 +572,7 @@ def main() -> None:
     )
     set_validation = MaterialSetDataset(
         manifest,
-        sample_ids=split.validation,
+        sample_ids=validation_ids,
         set_size=args.set_size,
         sets_per_material=args.validation_bags_per_material,
         seed=args.seed + 1,
