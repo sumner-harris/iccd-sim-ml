@@ -139,6 +139,42 @@ latent dimensions, and consider free bits only if collapse remains visible.
 Loss weights and the warm-up schedule are hyperparameters selected entirely
 inside the training folds.
 
+### Property-faithful generator fine-tuning
+
+The inverse regression term above acts on the real input video. By itself it
+does **not** require a decoded video to retain the material properties supplied
+to the decoder. For property-intervention studies, fine-tune the pretrained
+cVAE with an independently trained, frozen inverse model:
+
+```text
+x_posterior = decoder(q(video, laser, properties), laser, properties)
+x_prior     = decoder(p(laser, properties), laser, properties)
+
+property_cycle = Huber(R_frozen(x_posterior, laser), properties)
+               + Huber(R_frozen(x_prior, laser), properties)
+```
+
+The teacher remains in evaluation mode and its parameters do not receive
+gradients, but gradients through its video input update the cVAE decoder. A
+local intervention term also changes one standardized property at a time with
+the latent and laser conditions held fixed. It rewards the requested change
+in the teacher prediction and penalizes changes in the other properties.
+
+The maintained campaign script
+[`train_property_faithful_cvae.py`](../scripts/train_property_faithful_cvae.py)
+runs two sequential stages without creating separate property heads:
+
+1. single-video cycles through the frozen production video regressor; and
+2. same-material video-bag cycles through the frozen Set Transformer.
+
+Both stages retain reconstruction, KL, seven-output regression, and
+classification losses. The second stage uses `MaterialSetDataset`, so every
+Set Transformer input contains several laser conditions from one material;
+it never treats unrelated videos in a shuffled minibatch as a material set.
+These cycle losses establish consistency with trusted inverse models, not
+physical truth. The generator must still pass reconstruction, morphology,
+radiance-distribution, intervention-slope, and held-out-simulation checks.
+
 ## Minimal API pattern
 
 The maintained names are `JointCVAEConfig`, `JointConditionalVAE`,

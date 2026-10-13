@@ -13,6 +13,7 @@ _LAZY_EXPORTS = {
         "average_material_set_predictions",
     ),
     "JointLossConfig": (".joint", "JointLossConfig"),
+    "PropertyCycleLossConfig": (".property_cycle", "PropertyCycleLossConfig"),
     "TargetWeightedSmoothL1Loss": (
         ".set_regression",
         "TargetWeightedSmoothL1Loss",
@@ -27,7 +28,13 @@ _LAZY_EXPORTS = {
     "evaluate_joint_epoch": (".joint", "evaluate_joint_epoch"),
     "joint_cvae_loss": (".joint", "joint_cvae_loss"),
     "load_checkpoint": (".checkpoints", "load_checkpoint"),
+    "freeze_property_teacher": (".property_cycle", "freeze_property_teacher"),
     "save_checkpoint": (".checkpoints", "save_checkpoint"),
+    "set_property_cycle_losses": (".property_cycle", "set_property_cycle_losses"),
+    "single_video_property_cycle_losses": (
+        ".property_cycle",
+        "single_video_property_cycle_losses",
+    ),
     "train_one_epoch": (".engine", "train_one_epoch"),
     "train_joint_one_epoch": (".joint", "train_joint_one_epoch"),
     "train_material_set_one_epoch": (
@@ -38,6 +45,7 @@ _LAZY_EXPORTS = {
 
 __all__ = [
     "JointLossConfig",
+    "PropertyCycleLossConfig",
     "TargetWeightedSmoothL1Loss",
     "average_material_set_predictions",
     "checkpoint_metadata",
@@ -46,10 +54,13 @@ __all__ = [
     "collect_material_set_predictions",
     "evaluate_epoch",
     "evaluate_joint_epoch",
+    "freeze_property_teacher",
     "joint_cvae_loss",
     "load_checkpoint",
     "regression_metrics",
     "save_checkpoint",
+    "set_property_cycle_losses",
+    "single_video_property_cycle_losses",
     "train_one_epoch",
     "train_joint_one_epoch",
     "train_material_set_one_epoch",

@@ -545,6 +545,58 @@ class JointConditionalVAE(nn.Module):
             latent=latent,
         ).reconstruction
 
+    def prior_parameters(
+        self,
+        laser_conditions: torch.Tensor,
+        material_properties: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return conditional-prior mean and log variance.
+
+        This public helper is useful for controlled material-property
+        interventions: callers can hold one latent realization fixed while
+        changing only the requested physical property.
+        """
+
+        batch_size = laser_conditions.shape[0] if laser_conditions.ndim > 0 else 0
+        self._validate_matrix(
+            laser_conditions,
+            name="laser_conditions",
+            width=self.config.laser_condition_dim,
+        )
+        self._validate_matrix(
+            material_properties,
+            name="material_properties",
+            width=self.config.material_property_dim,
+            batch_size=batch_size,
+        )
+        condition_embedding = self._condition(laser_conditions, material_properties)
+        return self._distribution_parameters(self.prior(condition_embedding))
+
+    def decode_latent(
+        self,
+        latent: torch.Tensor,
+        laser_conditions: torch.Tensor,
+        material_properties: torch.Tensor,
+    ) -> torch.Tensor:
+        """Decode ``latent`` while retaining gradients through the conditions."""
+
+        batch_size = laser_conditions.shape[0] if laser_conditions.ndim > 0 else 0
+        self._validate_latent(latent, batch_size)
+        self._validate_matrix(
+            laser_conditions,
+            name="laser_conditions",
+            width=self.config.laser_condition_dim,
+            batch_size=batch_size,
+        )
+        self._validate_matrix(
+            material_properties,
+            name="material_properties",
+            width=self.config.material_property_dim,
+            batch_size=batch_size,
+        )
+        condition_embedding = self._condition(laser_conditions, material_properties)
+        return self.decoder(torch.cat((latent, condition_embedding), dim=1), condition_embedding)
+
     def generate(
         self,
         laser_conditions: torch.Tensor,
@@ -615,9 +667,9 @@ class JointConditionalVAE(nn.Module):
         if repeated_identical_latent:
             decoder_input = torch.cat((latents[:, 0, :], condition_embedding), dim=1)
             generated = self.decoder(decoder_input, condition_embedding)
-            return generated[:, None, ...].expand(
-                -1, sample_count, *self.config.video_shape
-            ).clone()
+            return (
+                generated[:, None, ...].expand(-1, sample_count, *self.config.video_shape).clone()
+            )
 
         repeated_condition = condition_embedding[:, None, :].expand(-1, sample_count, -1)
         decoder_input = torch.cat((latents, repeated_condition), dim=2).reshape(
