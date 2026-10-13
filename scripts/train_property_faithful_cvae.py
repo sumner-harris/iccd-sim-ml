@@ -397,12 +397,11 @@ def _run_stage(
     best_path = output / "checkpoint.pt"
     epoch_function = _single_epoch if name == "single_video_cycle" else _set_epoch
     for epoch in range(epochs):
-        scale = _cycle_scale(args, epoch)
+        training_scale = _cycle_scale(args, epoch)
         common: dict[str, Any] = {
             "device": device,
             "base_config": base_config,
             "cycle_config": cycle_config,
-            "cycle_scale": scale,
             "intervention_offset": epoch,
         }
         if name == "set_transformer_cycle":
@@ -412,6 +411,7 @@ def _run_stage(
             teacher,
             train_loader,
             optimizer=optimizer,
+            cycle_scale=training_scale,
             **common,
         )
         validation = epoch_function(
@@ -419,11 +419,16 @@ def _run_stage(
             teacher,
             validation_loader,
             optimizer=None,
+            # Keep model selection comparable while the training constraint
+            # ramps up. Otherwise an early epoch wins merely because its
+            # property-cycle coefficient is smaller.
+            cycle_scale=float(args.cycle_weight),
             **common,
         )
         record = {
             "epoch": epoch + 1,
-            "cycle_scale": scale,
+            "training_cycle_scale": training_scale,
+            "validation_cycle_scale": float(args.cycle_weight),
             "train": train,
             "validation": validation,
         }
